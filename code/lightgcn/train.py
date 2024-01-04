@@ -15,7 +15,7 @@ logger = get_logger(logging_conf)
 
 def main(args: argparse.Namespace):
     wandb.login()
-    wandb.init(project="Level2-lightgcn", config=vars(args))
+    wandb.init(project="level2-lightgcn", config=vars(args))
     set_seeds(args.seed)
     
     use_cuda: bool = torch.cuda.is_available() and args.use_cuda_if_available
