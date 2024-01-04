@@ -7,7 +7,7 @@ def parse_args():
     parser.add_argument("--seed", default=42, type=int, help="seed")
     parser.add_argument("--use_cuda_if_available", default=True, type=bool, help="Use GPU")
     
-    parser.add_argument("--data_dir", default="/data/ephemeral/home/data", type=str, help="")
+    parser.add_argument("--data_dir", default="/data/ephemeral/home/level2-dkt-recsys-06/data", type=str, help="")
     
     parser.add_argument("--output_dir", default="../submit/", type=str, help="")
     
