@@ -1,0 +1,156 @@
+2024-01-04 02:50:15,213 - root - INFO - Preparing data ...
+2024-01-04 02:50:25,712 - root - INFO - Train Dataset Info
+2024-01-04 02:50:25,712 - root - INFO -  * Num. Users    : 7442
+2024-01-04 02:50:25,712 - root - INFO -  * Max. UserID   : 7441
+2024-01-04 02:50:25,713 - root - INFO -  * Num. Items    : 9454
+2024-01-04 02:50:25,713 - root - INFO -  * Num. Records  : 2475962
+2024-01-04 02:50:25,714 - root - INFO - Test Dataset Info
+2024-01-04 02:50:25,714 - root - INFO -  * Num. Users    : 744
+2024-01-04 02:50:25,714 - root - INFO -  * Max. UserID   : 7439
+2024-01-04 02:50:25,714 - root - INFO -  * Num. Items    : 444
+2024-01-04 02:50:25,714 - root - INFO -  * Num. Records  : 744
+2024-01-04 02:50:25,803 - root - INFO - Building Model ...
+2024-01-04 02:50:25,821 - root - INFO - No load model
+2024-01-04 02:50:25,823 - root - INFO - Start Training ...
+2024-01-04 02:50:25,913 - root - INFO - Training Started : n_epochs=20
+2024-01-04 02:50:25,914 - root - INFO - Epoch: 0
+2024-01-04 02:50:26,673 - root - INFO - TRAIN AUC : 0.4995 ACC : 0.4998 LOSS : 0.6931
+2024-01-04 02:50:26,677 - root - INFO - VALID AUC : 0.4963 ACC : 0.4880
+2024-01-04 02:50:26,678 - root - INFO - Best model updated AUC from 0.0000 to 0.4963
+2024-01-04 02:50:26,686 - root - INFO - Epoch: 1
+2024-01-04 02:50:27,443 - root - INFO - TRAIN AUC : 0.5176 ACC : 0.5126 LOSS : 0.6931
+2024-01-04 02:50:27,447 - root - INFO - VALID AUC : 0.5146 ACC : 0.4980
+2024-01-04 02:50:27,447 - root - INFO - Best model updated AUC from 0.4963 to 0.5146
+2024-01-04 02:50:27,485 - root - INFO - Epoch: 2
+2024-01-04 02:50:28,276 - root - INFO - TRAIN AUC : 0.5358 ACC : 0.5255 LOSS : 0.6931
+2024-01-04 02:50:28,280 - root - INFO - VALID AUC : 0.5331 ACC : 0.5130
+2024-01-04 02:50:28,281 - root - INFO - Best model updated AUC from 0.5146 to 0.5331
+2024-01-04 02:50:28,317 - root - INFO - Epoch: 3
+2024-01-04 02:50:29,079 - root - INFO - TRAIN AUC : 0.5541 ACC : 0.5384 LOSS : 0.6931
+2024-01-04 02:50:29,083 - root - INFO - VALID AUC : 0.5516 ACC : 0.5270
+2024-01-04 02:50:29,084 - root - INFO - Best model updated AUC from 0.5331 to 0.5516
+2024-01-04 02:50:29,119 - root - INFO - Epoch: 4
+2024-01-04 02:50:29,886 - root - INFO - TRAIN AUC : 0.5726 ACC : 0.5521 LOSS : 0.6931
+2024-01-04 02:50:29,890 - root - INFO - VALID AUC : 0.5713 ACC : 0.5430
+2024-01-04 02:50:29,891 - root - INFO - Best model updated AUC from 0.5516 to 0.5713
+2024-01-04 02:50:29,927 - root - INFO - Epoch: 5
+2024-01-04 02:50:30,689 - root - INFO - TRAIN AUC : 0.5915 ACC : 0.5662 LOSS : 0.6931
+2024-01-04 02:50:30,694 - root - INFO - VALID AUC : 0.5916 ACC : 0.5580
+2024-01-04 02:50:30,694 - root - INFO - Best model updated AUC from 0.5713 to 0.5916
+2024-01-04 02:50:30,733 - root - INFO - Epoch: 6
+2024-01-04 02:50:31,499 - root - INFO - TRAIN AUC : 0.6108 ACC : 0.5811 LOSS : 0.6931
+2024-01-04 02:50:31,503 - root - INFO - VALID AUC : 0.6124 ACC : 0.5770
+2024-01-04 02:50:31,504 - root - INFO - Best model updated AUC from 0.5916 to 0.6124
+2024-01-04 02:50:31,539 - root - INFO - Epoch: 7
+2024-01-04 02:50:32,308 - root - INFO - TRAIN AUC : 0.6307 ACC : 0.5968 LOSS : 0.6931
+2024-01-04 02:50:32,312 - root - INFO - VALID AUC : 0.6342 ACC : 0.5980
+2024-01-04 02:50:32,313 - root - INFO - Best model updated AUC from 0.6124 to 0.6342
+2024-01-04 02:50:32,350 - root - INFO - Epoch: 8
+2024-01-04 02:50:33,108 - root - INFO - TRAIN AUC : 0.6510 ACC : 0.6134 LOSS : 0.6931
+2024-01-04 02:50:33,112 - root - INFO - VALID AUC : 0.6566 ACC : 0.6150
+2024-01-04 02:50:33,113 - root - INFO - Best model updated AUC from 0.6342 to 0.6566
+2024-01-04 02:50:33,146 - root - INFO - Epoch: 9
+2024-01-04 02:50:33,914 - root - INFO - TRAIN AUC : 0.6716 ACC : 0.6310 LOSS : 0.6931
+2024-01-04 02:50:33,919 - root - INFO - VALID AUC : 0.6792 ACC : 0.6340
+2024-01-04 02:50:33,920 - root - INFO - Best model updated AUC from 0.6566 to 0.6792
+2024-01-04 02:50:33,954 - root - INFO - Epoch: 10
+2024-01-04 02:50:34,709 - root - INFO - TRAIN AUC : 0.6924 ACC : 0.6492 LOSS : 0.6931
+2024-01-04 02:50:34,714 - root - INFO - VALID AUC : 0.7017 ACC : 0.6570
+2024-01-04 02:50:34,714 - root - INFO - Best model updated AUC from 0.6792 to 0.7017
+2024-01-04 02:50:34,747 - root - INFO - Epoch: 11
+2024-01-04 02:50:35,507 - root - INFO - TRAIN AUC : 0.7128 ACC : 0.6675 LOSS : 0.6931
+2024-01-04 02:50:35,512 - root - INFO - VALID AUC : 0.7237 ACC : 0.6780
+2024-01-04 02:50:35,512 - root - INFO - Best model updated AUC from 0.7017 to 0.7237
+2024-01-04 02:50:35,549 - root - INFO - Epoch: 12
+2024-01-04 02:50:36,339 - root - INFO - TRAIN AUC : 0.7325 ACC : 0.6856 LOSS : 0.6931
+2024-01-04 02:50:36,344 - root - INFO - VALID AUC : 0.7436 ACC : 0.6960
+2024-01-04 02:50:36,344 - root - INFO - Best model updated AUC from 0.7237 to 0.7436
+2024-01-04 02:50:36,372 - root - INFO - Epoch: 13
+2024-01-04 02:50:37,128 - root - INFO - TRAIN AUC : 0.7509 ACC : 0.7029 LOSS : 0.6931
+2024-01-04 02:50:37,132 - root - INFO - VALID AUC : 0.7616 ACC : 0.7140
+2024-01-04 02:50:37,133 - root - INFO - Best model updated AUC from 0.7436 to 0.7616
+2024-01-04 02:50:37,158 - root - INFO - Epoch: 14
+2024-01-04 02:50:37,941 - root - INFO - TRAIN AUC : 0.7677 ACC : 0.7190 LOSS : 0.6930
+2024-01-04 02:50:37,946 - root - INFO - VALID AUC : 0.7772 ACC : 0.7330
+2024-01-04 02:50:37,946 - root - INFO - Best model updated AUC from 0.7616 to 0.7772
+2024-01-04 02:50:37,976 - root - INFO - Epoch: 15
+2024-01-04 02:50:38,762 - root - INFO - TRAIN AUC : 0.7823 ACC : 0.7334 LOSS : 0.6930
+2024-01-04 02:50:38,766 - root - INFO - VALID AUC : 0.7902 ACC : 0.7460
+2024-01-04 02:50:38,767 - root - INFO - Best model updated AUC from 0.7772 to 0.7902
+2024-01-04 02:50:38,798 - root - INFO - Epoch: 16
+2024-01-04 02:50:39,569 - root - INFO - TRAIN AUC : 0.7946 ACC : 0.7456 LOSS : 0.6930
+2024-01-04 02:50:39,574 - root - INFO - VALID AUC : 0.8005 ACC : 0.7540
+2024-01-04 02:50:39,574 - root - INFO - Best model updated AUC from 0.7902 to 0.8005
+2024-01-04 02:50:39,608 - root - INFO - Epoch: 17
+2024-01-04 02:50:40,382 - root - INFO - TRAIN AUC : 0.8044 ACC : 0.7556 LOSS : 0.6930
+2024-01-04 02:50:40,386 - root - INFO - VALID AUC : 0.8084 ACC : 0.7600
+2024-01-04 02:50:40,387 - root - INFO - Best model updated AUC from 0.8005 to 0.8084
+2024-01-04 02:50:40,414 - root - INFO - Epoch: 18
+2024-01-04 02:50:41,167 - root - INFO - TRAIN AUC : 0.8120 ACC : 0.7635 LOSS : 0.6929
+2024-01-04 02:50:41,171 - root - INFO - VALID AUC : 0.8145 ACC : 0.7660
+2024-01-04 02:50:41,171 - root - INFO - Best model updated AUC from 0.8084 to 0.8145
+2024-01-04 02:50:41,203 - root - INFO - Epoch: 19
+2024-01-04 02:50:41,961 - root - INFO - TRAIN AUC : 0.8176 ACC : 0.7699 LOSS : 0.6929
+2024-01-04 02:50:41,965 - root - INFO - VALID AUC : 0.8190 ACC : 0.7740
+2024-01-04 02:50:41,966 - root - INFO - Best model updated AUC from 0.8145 to 0.8190
+2024-01-04 02:50:42,004 - root - INFO - Best Weight Confirmed : 20'th epoch
+2024-01-04 02:51:09,865 - root - INFO - Preparing data ...
+2024-01-04 02:51:20,359 - root - INFO - Train Dataset Info
+2024-01-04 02:51:20,359 - root - INFO -  * Num. Users    : 7442
+2024-01-04 02:51:20,359 - root - INFO -  * Max. UserID   : 7441
+2024-01-04 02:51:20,359 - root - INFO -  * Num. Items    : 9454
+2024-01-04 02:51:20,359 - root - INFO -  * Num. Records  : 2475962
+2024-01-04 02:51:20,360 - root - INFO - Test Dataset Info
+2024-01-04 02:51:20,360 - root - INFO -  * Num. Users    : 744
+2024-01-04 02:51:20,360 - root - INFO -  * Max. UserID   : 7439
+2024-01-04 02:51:20,360 - root - INFO -  * Num. Items    : 444
+2024-01-04 02:51:20,360 - root - INFO -  * Num. Records  : 744
+2024-01-04 02:51:20,453 - root - INFO - Loading Model ...
+2024-01-04 02:51:20,470 - root - INFO - Load model
+2024-01-04 02:51:20,477 - root - INFO - Make Predictions & Save Submission ...
+2024-01-04 02:51:20,482 - root - INFO - Saving Result ...
+2024-01-04 02:51:20,485 - root - INFO - Successfully saved submission as ./outputs/submission.csv
+2024-01-04 03:21:27,931 - root - INFO - Preparing data ...
+2024-01-04 03:21:38,383 - root - INFO - Train Dataset Info
+2024-01-04 03:21:38,383 - root - INFO -  * Num. Users    : 7442
+2024-01-04 03:21:38,383 - root - INFO -  * Max. UserID   : 7441
+2024-01-04 03:21:38,383 - root - INFO -  * Num. Items    : 9454
+2024-01-04 03:21:38,383 - root - INFO -  * Num. Records  : 2475962
+2024-01-04 03:21:38,384 - root - INFO - Test Dataset Info
+2024-01-04 03:21:38,384 - root - INFO -  * Num. Users    : 744
+2024-01-04 03:21:38,384 - root - INFO -  * Max. UserID   : 7439
+2024-01-04 03:21:38,384 - root - INFO -  * Num. Items    : 444
+2024-01-04 03:21:38,384 - root - INFO -  * Num. Records  : 744
+2024-01-04 03:21:38,475 - root - INFO - Loading Model ...
+2024-01-04 03:21:38,492 - root - INFO - Load model
+2024-01-04 03:21:38,498 - root - INFO - Make Predictions & Save Submission ...
+2024-01-04 03:25:46,804 - root - INFO - Preparing data ...
+2024-01-04 03:25:57,337 - root - INFO - Train Dataset Info
+2024-01-04 03:25:57,337 - root - INFO -  * Num. Users    : 7442
+2024-01-04 03:25:57,338 - root - INFO -  * Max. UserID   : 7441
+2024-01-04 03:25:57,338 - root - INFO -  * Num. Items    : 9454
+2024-01-04 03:25:57,338 - root - INFO -  * Num. Records  : 2475962
+2024-01-04 03:25:57,338 - root - INFO - Test Dataset Info
+2024-01-04 03:25:57,339 - root - INFO -  * Num. Users    : 744
+2024-01-04 03:25:57,339 - root - INFO -  * Max. UserID   : 7439
+2024-01-04 03:25:57,339 - root - INFO -  * Num. Items    : 444
+2024-01-04 03:25:57,339 - root - INFO -  * Num. Records  : 744
+2024-01-04 03:25:57,432 - root - INFO - Loading Model ...
+2024-01-04 03:25:57,449 - root - INFO - Load model
+2024-01-04 03:25:57,456 - root - INFO - Make Predictions & Save Submission ...
+2024-01-04 03:32:13,432 - root - INFO - Preparing data ...
+2024-01-04 03:32:23,865 - root - INFO - Train Dataset Info
+2024-01-04 03:32:23,865 - root - INFO -  * Num. Users    : 7442
+2024-01-04 03:32:23,865 - root - INFO -  * Max. UserID   : 7441
+2024-01-04 03:32:23,865 - root - INFO -  * Num. Items    : 9454
+2024-01-04 03:32:23,865 - root - INFO -  * Num. Records  : 2475962
+2024-01-04 03:32:23,866 - root - INFO - Test Dataset Info
+2024-01-04 03:32:23,866 - root - INFO -  * Num. Users    : 744
+2024-01-04 03:32:23,866 - root - INFO -  * Max. UserID   : 7439
+2024-01-04 03:32:23,866 - root - INFO -  * Num. Items    : 444
+2024-01-04 03:32:23,866 - root - INFO -  * Num. Records  : 744
+2024-01-04 03:32:23,955 - root - INFO - Loading Model ...
+2024-01-04 03:32:23,972 - root - INFO - Load model
+2024-01-04 03:32:23,980 - root - INFO - Make Predictions & Save Submission ...
+2024-01-04 03:32:23,985 - root - INFO - Saving Result ...
+2024-01-04 03:32:23,988 - root - INFO - Successfully saved submission as ../submit/lightgcn_submission.csv
