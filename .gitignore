@@ -1,5 +1,5 @@
-wandb/
+code/**/wandb/
 
-__pycache__/
+code/**/__pycache__/
 
-run.log
+code/**/run.log
