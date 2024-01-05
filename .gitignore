@@ -1,0 +1,5 @@
+code/**/wandb
+
+code/**/__pycache__
+
+code/**/run.log
