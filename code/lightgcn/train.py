@@ -9,13 +9,21 @@ from lightgcn.datasets import prepare_dataset
 from lightgcn import trainer
 from lightgcn.utils import get_logger, set_seeds, logging_conf
 
+from datetime import datetime
+import pytz
+
+import warnings
+warnings.filterwarnings("ignore")
 
 logger = get_logger(logging_conf)
-
+korea = pytz.timezone('Asia/Seoul')
+current_time = datetime.now(korea).strftime("%m-%d %H:%M")
 
 def main(args: argparse.Namespace):
     wandb.login()
     wandb.init(project="level2-lightgcn", config=vars(args))
+    wandb.run.name = "Wonhee Lee " + current_time
+    wandb.run.save()
     set_seeds(args.seed)
     
     use_cuda: bool = torch.cuda.is_available() and args.use_cuda_if_available
@@ -41,6 +49,8 @@ def main(args: argparse.Namespace):
         learning_rate=args.lr,
         model_dir=args.model_dir,
     )
+
+    wandb.finish()
 
 
 if __name__ == "__main__":
