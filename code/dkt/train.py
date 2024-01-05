@@ -31,7 +31,7 @@ def main(args):
     train_data: np.ndarray = preprocess.get_train_data()
     train_data, valid_data = preprocess.split_data(data=train_data)
     wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
-    wandb.run.name = "Wonhee Lee " + current_time
+    wandb.run.name = "Yunseok Kwak " + current_time
     wandb.run.save()
     
     logger.info("Building Model ...")
