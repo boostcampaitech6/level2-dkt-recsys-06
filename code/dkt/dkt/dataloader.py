@@ -49,6 +49,7 @@ class Preprocess:
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
 
+        # testId, assessmentItemID, KnowledgeTag에 대해서 unknown 토큰 처리
         for col in cate_cols:
             le = LabelEncoder()
             if is_train:
@@ -69,6 +70,7 @@ class Preprocess:
             test = le.transform(df[col])
             df[col] = test
 
+        # timestamp -> timetuple
         def convert_time(s: str):
             timestamp = time.mktime(
                 datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timetuple()
@@ -82,6 +84,7 @@ class Preprocess:
         # TODO: Fill in if needed
         return df
 
+    # userID 안들어감! -> 문항, 시험지, 문항 풀기시작한 정보만 들어감
     def load_data_from_file(self, file_name: str, is_train: bool = True) -> np.ndarray:
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)  # , nrows=100000)

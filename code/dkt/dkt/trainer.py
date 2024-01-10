@@ -100,8 +100,8 @@ def train(train_loader: torch.utils.data.DataLoader,
             logger.info("Training steps: %s Loss: %.4f", step, loss.item())
 
         # predictions
-        preds = sigmoid(preds[:, -1])
-        targets = targets[:, -1]
+        preds = sigmoid(preds[:, -1]) # 마지막 time-step의 output
+        targets = targets[:, -1] # 마지막 time-step의 label
 
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
@@ -203,7 +203,7 @@ def compute_loss(preds: torch.Tensor, targets: torch.Tensor):
     loss = get_criterion(pred=preds, target=targets.float())
 
     # 마지막 시퀀드에 대한 값만 loss 계산
-    loss = loss[:, -1]
+    loss = loss[:, -1] #(batch, max_seq_len) -> (batch,1)
     loss = torch.mean(loss)
     return loss
 
