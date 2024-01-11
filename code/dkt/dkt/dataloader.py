@@ -112,11 +112,11 @@ class Preprocess:
         # 최종 피처선택
         # columns = ["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"]
         columns = self.args.feats
-
+        print(f'-----------------------\ncolumns:{columns}\n------------------------')
         group = (
             df[columns]
             .groupby("userID")
-            .apply(lambda r: tuple([r[col].values for col in columns]))
+            .apply(lambda r: tuple([r[col].values for col in columns[1:]]))
         )
         return group.values
 
@@ -146,21 +146,21 @@ class DKTDataset(torch.utils.data.Dataset):
 
         # loader 넘어가기 위해 준비
         data = {
-            "test": torch.tensor(test + 1, dtype=torch.int),
-            "question": torch.tensor(question + 1, dtype=torch.int),
-            "tag": torch.tensor(tag + 1, dtype=torch.int),
-            "correct": torch.tensor(correct, dtype=torch.int),
+            "test": torch.LongTensor(test + 1),
+            "question": torch.LongTensor(question + 1),
+            "tag": torch.LongTensor(tag + 1),
+            "correct": torch.LongTensor(correct),
         }
 
         # 새로운 피처들이 있다면 data에 추가해라
-        if new_cat_feats:
+        if len(new_cat_feats) > 0:
             for i, cat_feat in enumerate(new_cat_feats):
-                data[f"new_cat_feats_{i}"] = torch.tensor(cat_feat, dtype=torch.int)
-        if new_num_feats:
+                data[f"new_cat_feats_{i}"] = torch.LongTensor(cat_feat)
+        if len(new_num_feats) > 0:
             for i, num_feat in enumerate(new_num_feats):
-                data[f"new_num_feats_{i}"] = torch.tensor(num_feat, dtype=torch.float32)
+                data[f"new_num_feats_{i}"] = torch.FloatTensor(num_feat)
 
-        # Generate mask: max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
+        # Generate mask: max seq len보다 길면 자르고 짧으면 그냥 둔다
         seq_len = len(row[0])
         if seq_len > self.max_seq_len:
             for k, seq in data.items():
@@ -169,10 +169,10 @@ class DKTDataset(torch.utils.data.Dataset):
         else:
             for k, seq in data.items():
                 # Pre-padding non-valid sequences
-                tmp = torch.zeros(self.max_seq_len)
+                tmp = torch.zeros(self.max_seq_len, dtype=torch.int64)
                 tmp[self.max_seq_len - seq_len :] = data[k]
-                data[k] = tmp
-            mask = torch.zeros(self.max_seq_len, dtype=torch.int16)
+                data[k] = torch.LongTensor(tmp)
+            mask = torch.zeros(self.max_seq_len, dtype=torch.int64)
             mask[-seq_len:] = 1
         data["mask"] = mask
 
@@ -182,7 +182,9 @@ class DKTDataset(torch.utils.data.Dataset):
         interaction_mask = data["mask"].roll(shifts=1)
         interaction_mask[0] = 0
         interaction = (interaction * interaction_mask).to(torch.int64)
-        data["interaction"] = interaction
+        data["interaction"] = torch.LongTensor(interaction)
+
+        data = {k: v.int() for k, v in data.items()}
 
         return data
 

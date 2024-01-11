@@ -35,20 +35,21 @@ class ModelBase(nn.Module):
 
         # 추가된 범주형 feature 있으면 embedding 만들기
         self.new_embeddings = []
-        for n_cat in self.args.n_cat_feats:
-            self.new_embeddings.append(nn.Embedding(n_cat + 1, intd))
+        if len(self.args.new_cat_feats) > 0:
+            for n_cat in self.args.n_cat_feats:
+                self.new_embeddings.append(nn.Embedding(n_cat + 1, intd))
 
         # Concatentaed Embedding Linear Projection
-        self.comb_proj = nn.Linear(intd * len(args.cat_feats), dim_cat)
+        self.comb_proj = nn.Linear(intd * (len(args.cat_feats)-1), dim_cat)
 
         ## NUMERICALS
         # linear: 두 개 이상이 수치형 변수가 있다면
-        dim_num = 0
-        if len(self.args.num_feats) > 1:
-            dim_num = dim_cat
-            self.comb_nums = nn.Linear(len(self.args.num_feats), dim_num)  # 수치형 추상화
+        # dim_num = 0
+        # if len(self.args.num_feats) > 1:
+        #     dim_num = dim_cat
+        #     self.comb_nums = nn.Linear(len(self.args.num_feats), dim_num)  # 수치형 추상화
 
-        # Fully connected layer: 이거 안쓰이는데 왜 나온거지?
+        # Fully connected layer: output layer
         self.fc = nn.Linear(hidden_dim, 1)
 
     # def forward(self, test, question, tag, correct, mask, interaction):
@@ -64,10 +65,10 @@ class ModelBase(nn.Module):
 
         batch_size = interaction.size(0)
         # Embedding
-        embed_interaction = self.embedding_interaction(interaction.int())
-        embed_test = self.embedding_test(test.int())
-        embed_question = self.embedding_question(question.int())
-        embed_tag = self.embedding_tag(tag.int())
+        embed_interaction = self.embedding_interaction(interaction)
+        embed_test = self.embedding_test(test)
+        embed_question = self.embedding_question(question)
+        embed_tag = self.embedding_tag(tag)
 
         embed = torch.cat(
             [
@@ -80,12 +81,14 @@ class ModelBase(nn.Module):
         )
 
         # 새로운 범주형 변수의 embedding을 concatenate
-        for i, new_embedding in enumerate(self.new_embeddings):
-            cat_feat = data[f"new_cat_feats_{i}"]
-            temp = new_embedding(cat_feat.int())
-            embed = torch.cat(
-                [embed, temp], dim=2
-            )  # 여기서 오류 예상.. (input=hidden)이 default라면 input dimension 아직 확장 안시켜줬어
+        if len(self.new_embeddings) > 0:
+            for i, new_embedding in enumerate(self.new_embeddings):
+                print(i, new_embedding)
+                cat_feat = data[f"new_cat_feats_{i}"]
+                temp = new_embedding(cat_feat.int())
+                embed = torch.cat(
+                    [embed, temp], dim=2
+                )  # 여기서 오류 예상.. (input=hidden)이 default라면 input dimension 아직 확장 안시켜줬어
 
         X = self.comb_proj(embed)  # embedding linear projection
         # if self.args.num_feats:
@@ -97,7 +100,7 @@ class ModelBase(nn.Module):
 class LSTM(ModelBase):
     def __init__(
         self,
-        args=args,
+        args,
         hidden_dim: int = 64,
         n_layers: int = 2,
         n_tests: int = 1538,
@@ -112,15 +115,10 @@ class LSTM(ModelBase):
             self.hidden_dim, self.hidden_dim, self.n_layers, batch_first=True
         )
 
-    def forward(self, test, question, tag, correct, mask, interaction):
-        X, batch_size = super().forward(
-            test=test,
-            question=question,
-            tag=tag,
-            correct=correct,
-            mask=mask,
-            interaction=interaction,
-        )
+    # def forward(self, test, question, tag, correct, mask, interaction):
+    def forward(self, data):
+        X, batch_size = super().forward(data=data)
+
         out, _ = self.lstm(X)
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
         out = self.fc(out).view(batch_size, -1)

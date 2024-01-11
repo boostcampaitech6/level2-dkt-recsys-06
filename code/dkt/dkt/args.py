@@ -79,11 +79,12 @@ def parse_args():
         "--base_cat_feats",
         nargs="+",
         default=["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"],
+        help="기본 범주형 변수"
     )
 
     # 실험 대상
-    parser.add_argument("--new_num_feats", nargs="+", default=[])
-    parser.add_argument("--new_cat_feats", nargs="+", default=[])
+    parser.add_argument("--new_num_feats", nargs="+", default=[], help="새로운 수치형 변수")
+    parser.add_argument("--new_cat_feats", nargs="+", default=[], help="새로운 범주형 변수")
 
     args = parser.parse_args()
 
@@ -91,5 +92,7 @@ def parse_args():
     args.cat_feats = args.base_cat_feats + args.new_cat_feats
 
     args.feats = args.cat_feats + args.num_feats
+
+    args.n_cat_feats = [] # 범주형 추가된다면 사용
 
     return args

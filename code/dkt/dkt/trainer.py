@@ -100,7 +100,7 @@ def train(
     losses = []
     for step, batch in enumerate(train_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
         targets = batch["correct"]
 
         loss = compute_loss(preds=preds, targets=targets)
@@ -136,7 +136,7 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
     total_targets = []
     for step, batch in enumerate(valid_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
         targets = batch["correct"]
 
         # predictions
