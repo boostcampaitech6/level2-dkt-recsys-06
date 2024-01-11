@@ -22,7 +22,9 @@ class ModelBase(nn.Module):
         # Embeddings
         # hd: Hidden dimension, intd: Intermediate hidden dimension
         hd, intd = hidden_dim, hidden_dim // 3
-        self.embedding_interaction = nn.Embedding(3, intd) # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
+        self.embedding_interaction = nn.Embedding(
+            3, intd
+        )  # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
         self.embedding_test = nn.Embedding(n_tests + 1, intd)
         self.embedding_question = nn.Embedding(n_questions + 1, intd)
         self.embedding_tag = nn.Embedding(n_tags + 1, intd)
@@ -32,7 +34,7 @@ class ModelBase(nn.Module):
 
         # Fully connected layer
         self.fc = nn.Linear(hd, 1)
-    
+
     def forward(self, test, question, tag, correct, mask, interaction):
         batch_size = interaction.size(0)
         # Embedding
@@ -63,24 +65,20 @@ class LSTM(ModelBase):
         n_tags: int = 913,
         **kwargs
     ):
-        super().__init__(
-            hidden_dim,
-            n_layers,
-            n_tests,
-            n_questions,
-            n_tags
-        )
+        super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
         self.lstm = nn.LSTM(
             self.hidden_dim, self.hidden_dim, self.n_layers, batch_first=True
         )
 
     def forward(self, test, question, tag, correct, mask, interaction):
-        X, batch_size = super().forward(test=test,
-                                        question=question,
-                                        tag=tag,
-                                        correct=correct,
-                                        mask=mask,
-                                        interaction=interaction)
+        X, batch_size = super().forward(
+            test=test,
+            question=question,
+            tag=tag,
+            correct=correct,
+            mask=mask,
+            interaction=interaction,
+        )
         out, _ = self.lstm(X)
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
         out = self.fc(out).view(batch_size, -1)
@@ -99,13 +97,7 @@ class LSTMATTN(ModelBase):
         drop_out: float = 0.1,
         **kwargs
     ):
-        super().__init__(
-            hidden_dim,
-            n_layers,
-            n_tests,
-            n_questions,
-            n_tags
-        )
+        super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
         self.n_heads = n_heads
         self.drop_out = drop_out
         self.lstm = nn.LSTM(
@@ -123,12 +115,14 @@ class LSTMATTN(ModelBase):
         self.attn = BertEncoder(self.config)
 
     def forward(self, test, question, tag, correct, mask, interaction):
-        X, batch_size = super().forward(test=test,
-                                        question=question,
-                                        tag=tag,
-                                        correct=correct,
-                                        mask=mask,
-                                        interaction=interaction)
+        X, batch_size = super().forward(
+            test=test,
+            question=question,
+            tag=tag,
+            correct=correct,
+            mask=mask,
+            interaction=interaction,
+        )
 
         out, _ = self.lstm(X)
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
@@ -158,13 +152,7 @@ class BERT(ModelBase):
         max_seq_len: float = 20,
         **kwargs
     ):
-        super().__init__(
-            hidden_dim,
-            n_layers,
-            n_tests,
-            n_questions,
-            n_tags
-        )
+        super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
         self.n_heads = n_heads
         self.drop_out = drop_out
         # Bert config
@@ -178,12 +166,14 @@ class BERT(ModelBase):
         self.encoder = BertModel(self.config)
 
     def forward(self, test, question, tag, correct, mask, interaction):
-        X, batch_size = super().forward(test=test,
-                                        question=question,
-                                        tag=tag,
-                                        correct=correct,
-                                        mask=mask,
-                                        interaction=interaction)
+        X, batch_size = super().forward(
+            test=test,
+            question=question,
+            tag=tag,
+            correct=correct,
+            mask=mask,
+            interaction=interaction,
+        )
 
         encoded_layers = self.encoder(inputs_embeds=X, attention_mask=mask)
         out = encoded_layers[0]

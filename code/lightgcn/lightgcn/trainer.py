@@ -54,30 +54,40 @@ def run(
     for e in range(n_epochs):
         logger.info("Epoch: %s", e)
         # TRAIN
-        train_auc, train_acc, train_loss = train(train_data=train_data, model=model, optimizer=optimizer)
-    
+        train_auc, train_acc, train_loss = train(
+            train_data=train_data, model=model, optimizer=optimizer
+        )
+
         # VALID
         auc, acc = validate(valid_data=valid_data, model=model)
-        wandb.log(dict(train_loss_epoch=train_loss,
-                       train_acc_epoch=train_acc,
-                       train_auc_epoch=train_auc,
-                       valid_acc_epoch=acc,
-                       valid_auc_epoch=auc))
+        wandb.log(
+            dict(
+                train_loss_epoch=train_loss,
+                train_acc_epoch=train_acc,
+                train_auc_epoch=train_auc,
+                valid_acc_epoch=acc,
+                valid_auc_epoch=auc,
+            )
+        )
 
         if auc > best_auc:
             logger.info("Best model updated AUC from %.4f to %.4f", best_auc, auc)
             best_auc, best_epoch = auc, e
-            torch.save(obj= {"model": model.state_dict(), "epoch": e + 1},
-                       f=os.path.join(model_dir, f"best_model.pt"))
-    torch.save(obj={"model": model.state_dict(), "epoch": e + 1},
-               f=os.path.join(model_dir, f"last_model.pt"))
+            torch.save(
+                obj={"model": model.state_dict(), "epoch": e + 1},
+                f=os.path.join(model_dir, f"best_model.pt"),
+            )
+    torch.save(
+        obj={"model": model.state_dict(), "epoch": e + 1},
+        f=os.path.join(model_dir, f"last_model.pt"),
+    )
     logger.info(f"Best Weight Confirmed : {best_epoch+1}'th epoch")
 
 
 def train(model: nn.Module, train_data: dict, optimizer: torch.optim.Optimizer):
     pred = model(train_data["edge"])
     loss = model.link_pred_loss(pred=pred, edge_label=train_data["label"])
-    
+
     prob = model.predict_link(edge_index=train_data["edge"], prob=True)
     prob = prob.detach().cpu().numpy()
 
@@ -89,7 +99,7 @@ def train(model: nn.Module, train_data: dict, optimizer: torch.optim.Optimizer):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    
+
     logger.info("TRAIN AUC : %.4f ACC : %.4f LOSS : %.4f", auc, acc, loss.item())
     return auc, acc, loss
 
@@ -98,7 +108,7 @@ def validate(valid_data: dict, model: nn.Module):
     with torch.no_grad():
         prob = model.predict_link(edge_index=valid_data["edge"], prob=True)
         prob = prob.detach().cpu().numpy()
-        
+
         label = valid_data["label"]
         acc = accuracy_score(y_true=label, y_pred=prob > 0.5)
         auc = roc_auc_score(y_true=label, y_score=prob)
@@ -110,7 +120,7 @@ def inference(args, model: nn.Module, data: dict, output_dir: str):
     model.eval()
     with torch.no_grad():
         pred = model.predict_link(edge_index=data["edge"], prob=True)
-        
+
     logger.info("Saving Result ...")
     pred = pred.detach().cpu().numpy()
     os.makedirs(name=output_dir, exist_ok=True)
