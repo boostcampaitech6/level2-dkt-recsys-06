@@ -22,11 +22,9 @@ class Preprocess:
     def get_test_data(self):
         return self.test_data
 
-    def split_data(self,
-                   data: np.ndarray,
-                   ratio: float = 0.7,
-                   shuffle: bool = True,
-                   seed: int = 0) -> Tuple[np.ndarray]:
+    def split_data(
+        self, data: np.ndarray, ratio: float = 0.7, shuffle: bool = True, seed: int = 0
+    ) -> Tuple[np.ndarray]:
         """
         split data into two parts with a given ratio.
         """
@@ -130,7 +128,7 @@ class DKTDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index: int) -> dict:
         row = self.data[index]
-        
+
         # Load from data
         test, question, tag, correct = row[0], row[1], row[2], row[3]
         data = {
@@ -144,18 +142,18 @@ class DKTDataset(torch.utils.data.Dataset):
         seq_len = len(row[0])
         if seq_len > self.max_seq_len:
             for k, seq in data.items():
-                data[k] = seq[-self.max_seq_len:]
+                data[k] = seq[-self.max_seq_len :]
             mask = torch.ones(self.max_seq_len, dtype=torch.int16)
         else:
             for k, seq in data.items():
                 # Pre-padding non-valid sequences
                 tmp = torch.zeros(self.max_seq_len)
-                tmp[self.max_seq_len-seq_len:] = data[k]
+                tmp[self.max_seq_len - seq_len :] = data[k]
                 data[k] = tmp
             mask = torch.zeros(self.max_seq_len, dtype=torch.int16)
             mask[-seq_len:] = 1
         data["mask"] = mask
-        
+
         # Generate interaction
         interaction = data["correct"] + 1  # 패딩을 위해 correct값에 1을 더해준다.
         interaction = interaction.roll(shifts=1)
@@ -170,7 +168,9 @@ class DKTDataset(torch.utils.data.Dataset):
         return len(self.data)
 
 
-def get_loaders(args, train: np.ndarray, valid: np.ndarray) -> Tuple[torch.utils.data.DataLoader]:
+def get_loaders(
+    args, train: np.ndarray, valid: np.ndarray
+) -> Tuple[torch.utils.data.DataLoader]:
     pin_memory = False
     train_loader, valid_loader = None, None
 

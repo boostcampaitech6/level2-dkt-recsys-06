@@ -63,7 +63,12 @@ def parse_args():
     )
 
     # submission 파일
-    parser.add_argument("--submission_name", default="dkt_submission.csv", type=str, help="submission file name")
+    parser.add_argument(
+        "--submission_name",
+        default="dkt_submission.csv",
+        type=str,
+        help="submission file name",
+    )
 
     args = parser.parse_args()
 
