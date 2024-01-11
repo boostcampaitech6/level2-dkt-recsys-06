@@ -63,8 +63,33 @@ def parse_args():
     )
 
     # submission 파일
-    parser.add_argument("--submission_name", default="dkt_submission.csv", type=str, help="submission file name")
+    parser.add_argument(
+        "--submission_name",
+        default="dkt_submission.csv",
+        type=str,
+        help="submission file name",
+    )
+
+    ### feature engineering
+    # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형
+
+    # base : 무조건 들어갈 애들
+    parser.add_argument("--base_num_feats", nargs="+", default=[])
+    parser.add_argument(
+        "--base_cat_feats",
+        nargs="+",
+        default=["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"],
+    )
+
+    # 실험 대상
+    parser.add_argument("--new_num_feats", nargs="+", default=[])
+    parser.add_argument("--new_cat_feats", nargs="+", default=[])
 
     args = parser.parse_args()
+
+    args.num_feats = args.base_num_feats + args.new_num_feats
+    args.cat_feats = args.base_cat_feats + args.new_cat_feats
+
+    args.feats = args.cat_feats + args.num_feats
 
     return args

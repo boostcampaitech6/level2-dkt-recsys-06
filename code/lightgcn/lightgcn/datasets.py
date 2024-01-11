@@ -23,14 +23,16 @@ def prepare_dataset(device: str, data_dir: str) -> Tuple[dict, dict, int]:
     return train_data_proc, test_data_proc, len(id2index)
 
 
-def load_data(data_dir: str) -> pd.DataFrame: 
+def load_data(data_dir: str) -> pd.DataFrame:
     path1 = os.path.join(data_dir, "train_data.csv")
     path2 = os.path.join(data_dir, "test_data.csv")
     data1 = pd.read_csv(path1)
     data2 = pd.read_csv(path2)
 
     data = pd.concat([data1, data2])
-    data.drop_duplicates(subset=["userID", "assessmentItemID"], keep="last", inplace=True)
+    data.drop_duplicates(
+        subset=["userID", "assessmentItemID"], keep="last", inplace=True
+    )
     return data
 
 
@@ -63,8 +65,7 @@ def process_data(data: pd.DataFrame, id2index: dict, device: str) -> dict:
 
     edge = torch.LongTensor(edge).T
     label = torch.LongTensor(label)
-    return dict(edge=edge.to(device),
-                label=label.to(device))
+    return dict(edge=edge.to(device), label=label.to(device))
 
 
 def print_data_stat(data: pd.DataFrame, name: str) -> None:

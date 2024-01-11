@@ -19,11 +19,10 @@ from .utils import get_logger, logging_conf
 logger = get_logger(logger_conf=logging_conf)
 
 
-def run(args,
-        train_data: np.ndarray,
-        valid_data: np.ndarray,
-        model: nn.Module):
-    train_loader, valid_loader = get_loaders(args=args, train=train_data, valid=valid_data)
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
+    train_loader, valid_loader = get_loaders(
+        args=args, train=train_data, valid=valid_data
+    )
 
     # For warmup scheduler which uses step interval
     args.total_steps = int(math.ceil(len(train_loader.dataset) / args.batch_size)) * (
@@ -40,35 +39,45 @@ def run(args,
         logger.info("Start Training: Epoch %s", epoch + 1)
 
         # TRAIN
-        train_auc, train_acc, train_loss = train(train_loader=train_loader,
-                                                 model=model, optimizer=optimizer,
-                                                 scheduler=scheduler, args=args)
+        train_auc, train_acc, train_loss = train(
+            train_loader=train_loader,
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            args=args,
+        )
 
         # VALID
         auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
 
-        wandb.log(dict(epoch=epoch,
-                       train_loss_epoch=train_loss,
-                       train_auc_epoch=train_auc,
-                       train_acc_epoch=train_acc,
-                       valid_auc_epoch=auc,
-                       valid_acc_epoch=acc))
-        
+        wandb.log(
+            dict(
+                epoch=epoch,
+                train_loss_epoch=train_loss,
+                train_auc_epoch=train_auc,
+                train_acc_epoch=train_acc,
+                valid_auc_epoch=auc,
+                valid_acc_epoch=acc,
+            )
+        )
+
         if auc > best_auc:
             best_auc = auc
             # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, "module") else model
-            save_checkpoint(state={"epoch": epoch + 1,
-                                   "state_dict": model_to_save.state_dict()},
-                            model_dir=args.model_dir,
-                            model_filename="best_model.pt")
+            save_checkpoint(
+                state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
+                model_dir=args.model_dir,
+                model_filename="best_model.pt",
+            )
             early_stopping_counter = 0
         else:
             early_stopping_counter += 1
             if early_stopping_counter >= args.patience:
                 logger.info(
                     "EarlyStopping counter: %s out of %s",
-                    early_stopping_counter, args.patience
+                    early_stopping_counter,
+                    args.patience,
                 )
                 break
 
@@ -77,11 +86,13 @@ def run(args,
             scheduler.step(best_auc)
 
 
-def train(train_loader: torch.utils.data.DataLoader,
-          model: nn.Module,
-          optimizer: torch.optim.Optimizer,
-          scheduler: torch.optim.lr_scheduler._LRScheduler,
-          args):
+def train(
+    train_loader: torch.utils.data.DataLoader,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
+    args,
+):
     model.train()
 
     total_preds = []
@@ -91,17 +102,18 @@ def train(train_loader: torch.utils.data.DataLoader,
         batch = {k: v.to(args.device) for k, v in batch.items()}
         preds = model(**batch)
         targets = batch["correct"]
-        
+
         loss = compute_loss(preds=preds, targets=targets)
-        update_params(loss=loss, model=model, optimizer=optimizer,
-                      scheduler=scheduler, args=args)
+        update_params(
+            loss=loss, model=model, optimizer=optimizer, scheduler=scheduler, args=args
+        )
 
         if step % args.log_steps == 0:
             logger.info("Training steps: %s Loss: %.4f", step, loss.item())
 
         # predictions
-        preds = sigmoid(preds[:, -1]) # 마지막 time-step의 output
-        targets = targets[:, -1] # 마지막 time-step의 label
+        preds = sigmoid(preds[:, -1])  # 마지막 time-step의 output
+        targets = targets[:, -1]  # 마지막 time-step의 label
 
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
@@ -168,6 +180,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
 
 def get_model(args) -> nn.Module:
     model_args = dict(
+        args=args,
         hidden_dim=args.hidden_dim,
         n_layers=args.n_layers,
         n_tests=args.n_tests,
@@ -183,7 +196,9 @@ def get_model(args) -> nn.Module:
             "lstm": LSTM,
             "lstmattn": LSTMATTN,
             "bert": BERT,
-        }.get(model_name)(**model_args)
+        }.get(
+            model_name
+        )(**model_args)
     except KeyError:
         logger.warn("No model name %s found", model_name)
     except Exception as e:
@@ -203,18 +218,22 @@ def compute_loss(preds: torch.Tensor, targets: torch.Tensor):
     loss = get_criterion(pred=preds, target=targets.float())
 
     # 마지막 시퀀드에 대한 값만 loss 계산
-    loss = loss[:, -1] #(batch, max_seq_len) -> (batch,1)
+    loss = loss[:, -1]  # (batch, max_seq_len) -> (batch,1)
     loss = torch.mean(loss)
     return loss
 
 
-def update_params(loss: torch.Tensor,
-                  model: nn.Module,
-                  optimizer: torch.optim.Optimizer,
-                  scheduler: torch.optim.lr_scheduler._LRScheduler,
-                  args):
+def update_params(
+    loss: torch.Tensor,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
+    args,
+):
     loss.backward()
-    nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
+    nn.utils.clip_grad_norm_(
+        model.parameters(), args.clip_grad
+    )  # gradient 크기를 너무 커지지도 너무 작아지지도 않게 조절 (이전 gradient의 변화량 기준으로)
     if args.scheduler == "linear_warmup":
         scheduler.step()
     optimizer.step()
@@ -222,7 +241,7 @@ def update_params(loss: torch.Tensor,
 
 
 def save_checkpoint(state: dict, model_dir: str, model_filename: str) -> None:
-    """ Saves checkpoint to a given directory. """
+    """Saves checkpoint to a given directory."""
     save_path = os.path.join(model_dir, model_filename)
     logger.info("saving model as %s...", save_path)
     os.makedirs(model_dir, exist_ok=True)
