@@ -11,7 +11,7 @@ def parse_args():
 
     parser.add_argument(
         "--data_dir",
-        default="/data/ephemeral/home/level2-dkt-recsys-06/data",
+        default="../../data",
         type=str,
         help="",
     )
