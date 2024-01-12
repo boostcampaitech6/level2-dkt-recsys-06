@@ -87,7 +87,7 @@ def parse_args():
     parser.add_argument("--new_cat_feats", nargs="+", default=[], help="새로운 범주형 변수")
 
     args = parser.parse_args()
-
+    args.new_num_feats = args.new_num_feats[0].split(' ')
     args.num_feats = args.base_num_feats + args.new_num_feats
     args.cat_feats = args.base_cat_feats + args.new_cat_feats
 
