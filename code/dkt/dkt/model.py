@@ -127,9 +127,15 @@ class LSTM(ModelBase):
         super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
 
         self.args = args
-        self.lstm = nn.LSTM(
-            self.hidden_dim * 2, self.hidden_dim, self.n_layers, batch_first=True
-        )
+
+        if len(self.args.new_num_feats) > 1:
+            self.lstm = nn.LSTM(
+                self.hidden_dim * 2, self.hidden_dim, self.n_layers, batch_first=True
+            )
+        else:
+            self.lstm = nn.LSTM(
+                self.hidden_dim, self.hidden_dim, self.n_layers, batch_first=True
+            )
 
     # def forward(self, test, question, tag, correct, mask, interaction):
     def forward(self, data):

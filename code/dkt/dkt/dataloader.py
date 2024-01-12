@@ -43,11 +43,8 @@ class Preprocess:
 
     # cat: label encoding, unknown처리
     def __preprocessing(self, df: pd.DataFrame, is_train: bool = True) -> pd.DataFrame:
-        # feature engineering 위해 arg.cat_feats로 feature 목록선택
-        # cate_cols = ["assessmentItemID", "testId", "KnowledgeTag"]
 
-        # cate_cols = list(set(self.args.base_cat_feats + self.args.cat_feats))
-        cate_cols = self.args.cat_feats
+        cate_cols = ["assessmentItemID", "testId", "KnowledgeTag"] + self.args.new_cat_feats
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
