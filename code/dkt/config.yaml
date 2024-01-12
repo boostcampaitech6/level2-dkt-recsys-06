@@ -5,42 +5,44 @@ project: level2-dkt
 entity: boostcamp6-recsys6
 method: random
 metric:
-  name: valid_auc
-  goal: maxmize
-path:
-  data_dir: ../../data/
-  asset_dir: asset/
-  file_name: augment.csv
-  model_dir: models/
-  model_name: best_model.pt
-  output_dir: ../submit/
-  test_file_name: test_data.csv
+  name: valid_auc_epoch
+  goal: maximize
 parameters:
   model:
-
+    value: 'lstm'
   optimizer:
-
+    values: ['adam', 'adamW']
   scheduler:
-
+    values: ['plateau', 'linear_warmup']
   max_seq_len:
-
+    min: 5
+    max: 100
   lr:
-
+    min: 0.000001
+    max: 0.0001
   n_epochs:
-
+    min: 10
+    max: 30
   n_layers:
-
+    min: 2
+    max: 5
   n_heads:
-
+    min: 2
+    max: 5
   drop_out:
-
+    min: 0.1
+    max: 0.2
   hidden_dim:
-
+    min: 32
+    max: 128
   clip_grad:
-
+    min: 5
+    max: 20
   batch_size:
-
+    min: 32
+    max: 128
   patience:
-
+    min: 5
+    max: 10
   log_steps:
-
+    value: 50
