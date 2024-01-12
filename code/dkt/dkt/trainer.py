@@ -204,6 +204,7 @@ def get_model(args) -> nn.Module:
     except Exception as e:
         logger.warn("Error while loading %s with args: %s", model_name, model_args)
         raise e
+
     return model
 
 

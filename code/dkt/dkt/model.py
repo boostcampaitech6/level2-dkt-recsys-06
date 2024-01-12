@@ -37,17 +37,23 @@ class ModelBase(nn.Module):
         self.new_embeddings = []
         if len(self.args.new_cat_feats) > 0:
             for n_cat in self.args.n_cat_feats:
-                self.new_embeddings.append(nn.Embedding(n_cat + 1, intd))
+                self.new_embeddings.append(
+                    nn.Embedding(n_cat + 1, intd).to(self.args.device)
+                )
 
         # Concatentaed Embedding Linear Projection
-        self.comb_proj = nn.Linear(intd * (len(args.cat_feats)-1), dim_cat)
+        self.comb_proj = nn.Linear(intd * (len(args.cat_feats) - 1), dim_cat)
+        self.layer_norm_cat = nn.LayerNorm(dim_cat)
 
         ## NUMERICALS
-        # linear: 두 개 이상이 수치형 변수가 있다면
-        # dim_num = 0
-        # if len(self.args.num_feats) > 1:
-        #     dim_num = dim_cat
-        #     self.comb_nums = nn.Linear(len(self.args.num_feats), dim_num)  # 수치형 추상화
+        # linear: 수치형 변수 두 개 이상 -> linear -> layer_norm
+        dim_num = 0
+        if len(self.args.num_feats) > 1:
+            dim_num = dim_cat
+            self.comb_nums = nn.Linear(len(self.args.num_feats), dim_num).to(
+                self.args.device
+            )  # 수치형 추상화
+            self.layer_norm_num = nn.LayerNorm(dim_num)
 
         # Fully connected layer: output layer
         self.fc = nn.Linear(hidden_dim, 1)
@@ -83,16 +89,26 @@ class ModelBase(nn.Module):
         # 새로운 범주형 변수의 embedding을 concatenate
         if len(self.new_embeddings) > 0:
             for i, new_embedding in enumerate(self.new_embeddings):
-                print(i, new_embedding)
                 cat_feat = data[f"new_cat_feats_{i}"]
                 temp = new_embedding(cat_feat.int())
-                embed = torch.cat(
-                    [embed, temp], dim=2
-                )  # 여기서 오류 예상.. (input=hidden)이 default라면 input dimension 아직 확장 안시켜줬어
+                embed = torch.cat([embed, temp], dim=2)
 
         X = self.comb_proj(embed)  # embedding linear projection
-        # if self.args.num_feats:
-        # for enumerate(self.args.num_feats):
+        X = self.layer_norm_cat(X)
+
+        # 수치형 변수
+        if len(self.args.num_feats) > 1:
+            num_feat = data["num_feats_0"].reshape(batch_size, -1, 1)
+            for i in range(1, len(self.args.num_feats)):
+                tmp = data[f"num_feats_{i}"].reshape(batch_size, -1, 1)
+                num_feat = torch.cat([num_feat, tmp], dim=2)
+
+            X_num = self.comb_nums(
+                num_feat
+            )  # [batch_size, seq_len, len(num_feats)] -> [b,s,hd]
+            X_num = self.layer_norm_num(X_num)
+
+            X = torch.cat([X, X_num], dim=2)
 
         return X, batch_size
 
@@ -112,7 +128,7 @@ class LSTM(ModelBase):
 
         self.args = args
         self.lstm = nn.LSTM(
-            self.hidden_dim, self.hidden_dim, self.n_layers, batch_first=True
+            self.hidden_dim * 2, self.hidden_dim, self.n_layers, batch_first=True
         )
 
     # def forward(self, test, question, tag, correct, mask, interaction):

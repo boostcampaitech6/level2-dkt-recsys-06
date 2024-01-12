@@ -29,15 +29,8 @@ def main(args):
 
     logger.info("Preparing data ...")
     preprocess = Preprocess(args)
-    preprocess.load_train_data(file_name=args.file_name)
+    preprocess.load_train_data(args=args, file_name=args.file_name)
     train_data: np.ndarray = preprocess.get_train_data()
-
-    # 새로운 범주형 피처에 대해 자동으로 input의 가짓 수 (one-hot의 차원 수) 계산
-    for cat in args.new_cat_feats:
-        if args.n_cat_feats:
-            args.n_cat_feats.append(train_data[cat].nunique())
-        else:
-            args.n_cat_feats = [train_data[cat].nunique()]
 
     train_data, valid_data = preprocess.split_data(data=train_data)
     wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
