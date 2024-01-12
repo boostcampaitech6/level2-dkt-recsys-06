@@ -48,7 +48,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
         )
 
         # VALID
-        auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
+        _, auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
 
         wandb.log(
             dict(
@@ -134,10 +134,15 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
     total_preds = []
     total_targets = []
+    losses = []
+
     for step, batch in enumerate(valid_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
         preds = model(batch)
         targets = batch["correct"]
+
+        loss = compute_loss(preds=preds, targets=targets)
+        losses.append(loss)
 
         # predictions
         preds = sigmoid(preds[:, -1])
@@ -146,13 +151,14 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
 
+    losses_avg = sum(losses) / len(losses)
     total_preds = torch.concat(total_preds).cpu().numpy()
     total_targets = torch.concat(total_targets).cpu().numpy()
 
     # Train AUC / ACC
     auc, acc = get_metric(targets=total_targets, preds=total_preds)
     logger.info("VALID AUC : %.4f ACC : %.4f", auc, acc)
-    return auc, acc
+    return auc, acc, losses_avg
 
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
@@ -162,7 +168,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
     total_preds = []
     for step, batch in enumerate(test_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
 
         # predictions
         preds = sigmoid(preds[:, -1])

@@ -130,8 +130,8 @@ class Preprocess:
     def load_train_data(self, args, file_name: str) -> None:
         self.train_data = self.load_data_from_file(args, file_name)
 
-    def load_test_data(self, file_name: str) -> None:
-        self.test_data = self.load_data_from_file(file_name, is_train=False)
+    def load_test_data(self, args, file_name: str) -> None:
+        self.test_data = self.load_data_from_file(args, file_name, is_train=False)
 
 
 class DKTDataset(torch.utils.data.Dataset):
