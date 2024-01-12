@@ -1,0 +1,46 @@
+program: train.py
+name: dkt_sweep
+description: dkt lstm sweep
+project: level2-dkt
+entity: boostcamp6-recsys6
+method: random
+metric:
+  name: valid_auc
+  goal: maxmize
+path:
+  data_dir: ../../data/
+  asset_dir: asset/
+  file_name: augment.csv
+  model_dir: models/
+  model_name: best_model.pt
+  output_dir: ../submit/
+  test_file_name: test_data.csv
+parameters:
+  model:
+
+  optimizer:
+
+  scheduler:
+
+  max_seq_len:
+
+  lr:
+
+  n_epochs:
+
+  n_layers:
+
+  n_heads:
+
+  drop_out:
+
+  hidden_dim:
+
+  clip_grad:
+
+  batch_size:
+
+  patience:
+
+  log_steps:
+
