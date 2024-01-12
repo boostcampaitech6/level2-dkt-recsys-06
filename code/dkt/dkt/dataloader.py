@@ -41,12 +41,18 @@ class Preprocess:
         le_path = os.path.join(self.args.asset_dir, name + "_classes.npy")
         np.save(le_path, encoder.classes_)
 
+    # cat: label encoding, unknown처리
     def __preprocessing(self, df: pd.DataFrame, is_train: bool = True) -> pd.DataFrame:
-        cate_cols = ["assessmentItemID", "testId", "KnowledgeTag"]
+        cate_cols = [
+            "assessmentItemID",
+            "testId",
+            "KnowledgeTag",
+        ] + self.args.new_cat_feats
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
 
+        # testId, assessmentItemID, KnowledgeTag에 대해서 unknown 토큰 처리
         for col in cate_cols:
             le = LabelEncoder()
             if is_train:
@@ -67,6 +73,7 @@ class Preprocess:
             test = le.transform(df[col])
             df[col] = test
 
+        # timestamp -> timetuple
         def convert_time(s: str):
             timestamp = time.mktime(
                 datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timetuple()
@@ -78,13 +85,25 @@ class Preprocess:
 
     def __feature_engineering(self, df: pd.DataFrame) -> pd.DataFrame:
         # TODO: Fill in if needed
+
         return df
 
-    def load_data_from_file(self, file_name: str, is_train: bool = True) -> np.ndarray:
+    # userID 안들어감! -> 문항, 시험지, 문항 풀기시작한 정보만 들어감
+    def load_data_from_file(
+        self, args, file_name: str, is_train: bool = True
+    ) -> np.ndarray:
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)  # , nrows=100000)
-        df = self.__feature_engineering(df)
-        df = self.__preprocessing(df, is_train)
+
+        # 새로운 범주형 피처에 대해 자동으로 input의 가짓 수 (one-hot의 차원 수) 계산
+        for cat in args.new_cat_feats:
+            if args.n_cat_feats:
+                args.n_cat_feats.append(df[cat].nunique())
+            else:
+                args.n_cat_feats = [df[cat].nunique()]
+
+        df = self.__feature_engineering(df)  # feature 선택
+        df = self.__preprocessing(df, is_train)  # 범주형 전처리
 
         # 추후 feature를 embedding할 시에 embedding_layer의 input 크기를 결정할때 사용
 
@@ -99,23 +118,20 @@ class Preprocess:
         )
 
         df = df.sort_values(by=["userID", "Timestamp"], axis=0)
-        columns = ["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"]
+
+        # 최종 피처선택
+        # columns = ["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"]
+        columns = self.args.feats
+        print(f"-----------------------\ncolumns:{columns}\n------------------------")
         group = (
             df[columns]
             .groupby("userID")
-            .apply(
-                lambda r: (
-                    r["testId"].values,
-                    r["assessmentItemID"].values,
-                    r["KnowledgeTag"].values,
-                    r["answerCode"].values,
-                )
-            )
+            .apply(lambda r: tuple([r[col].values for col in columns[1:]]))
         )
         return group.values
 
-    def load_train_data(self, file_name: str) -> None:
-        self.train_data = self.load_data_from_file(file_name)
+    def load_train_data(self, args, file_name: str) -> None:
+        self.train_data = self.load_data_from_file(args, file_name)
 
     def load_test_data(self, file_name: str) -> None:
         self.test_data = self.load_data_from_file(file_name, is_train=False)
@@ -125,43 +141,65 @@ class DKTDataset(torch.utils.data.Dataset):
     def __init__(self, data: np.ndarray, args):
         self.data = data
         self.max_seq_len = args.max_seq_len
+        self.args = args
 
     def __getitem__(self, index: int) -> dict:
         row = self.data[index]
 
-        # Load from data
-        test, question, tag, correct = row[0], row[1], row[2], row[3]
+        # 반드시 args의 길이 앞뒤 맞아야 해! feats = 3+new_cat_feats+new_num_feats
+        # Load from data: 순서는 0:test, 1:quest, 2:tag, 3:correct는 고정! 나머지는 new로!
+        question, test, correct, tag = row[0], row[1], row[2], row[3]
+        new_cat_feats = row[4 : 4 + len(self.args.new_cat_feats)]  # 4번째부터 새로운 범주형
+        num_feats = row[
+            4 + len(self.args.new_cat_feats) :
+        ]  # 뒤쪽 수치형 (-0때문에 -n slicing X)
+
+        # loader 넘어가기 위해 준비
         data = {
-            "test": torch.tensor(test + 1, dtype=torch.int),
-            "question": torch.tensor(question + 1, dtype=torch.int),
-            "tag": torch.tensor(tag + 1, dtype=torch.int),
-            "correct": torch.tensor(correct, dtype=torch.int),
+            "test": torch.LongTensor(test + 1),
+            "question": torch.LongTensor(question + 1),
+            "tag": torch.LongTensor(tag + 1),
+            "correct": torch.LongTensor(correct),
         }
 
-        # Generate mask: max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
+        # 새로운 피처들이 있다면 data에 추가해라
+        if len(new_cat_feats) > 0:
+            for i, cat_feat in enumerate(new_cat_feats):
+                data[f"new_cat_feats_{i}"] = torch.LongTensor(cat_feat)
+        if len(num_feats) > 0:
+            for i, num_feat in enumerate(num_feats):
+                data[f"num_feats_{i}"] = torch.FloatTensor(num_feat)
+
+        # Generate mask: max seq len보다 길면 자르고 짧으면 그냥 둔다
         seq_len = len(row[0])
         if seq_len > self.max_seq_len:
             for k, seq in data.items():
                 data[k] = seq[-self.max_seq_len :]
             mask = torch.ones(self.max_seq_len, dtype=torch.int16)
         else:
-            for k, seq in data.items():
+            for i, (k, seq) in enumerate(data.items()):
                 # Pre-padding non-valid sequences
-                tmp = torch.zeros(self.max_seq_len)
-                tmp[self.max_seq_len - seq_len :] = data[k]
-                data[k] = tmp
-            mask = torch.zeros(self.max_seq_len, dtype=torch.int16)
+
+                if i < (len(self.args.cat_feats) - 1):  # 범주형 (-1: userID)
+                    tmp = torch.zeros(self.max_seq_len, dtype=torch.int64)
+                    tmp[self.max_seq_len - seq_len :] = data[k]
+                    data[k] = torch.LongTensor(tmp)
+                else:  # 수치형
+                    tmp = torch.zeros(self.max_seq_len, dtype=torch.float32)
+                    tmp[self.max_seq_len - seq_len :] = data[k]
+                    data[k] = tmp
+            mask = torch.zeros(self.max_seq_len, dtype=torch.int64)
             mask[-seq_len:] = 1
         data["mask"] = mask
 
-        # Generate interaction
+        # Generate interaction: 이전 문제 정답여부 (0:padding, 1:오답, 2:정답)
         interaction = data["correct"] + 1  # 패딩을 위해 correct값에 1을 더해준다.
-        interaction = interaction.roll(shifts=1)
+        interaction = interaction.roll(shifts=1)  # 이전 문제의 정답 여부
         interaction_mask = data["mask"].roll(shifts=1)
         interaction_mask[0] = 0
         interaction = (interaction * interaction_mask).to(torch.int64)
-        data["interaction"] = interaction
-        data = {k: v.int() for k, v in data.items()}
+        data["interaction"] = torch.LongTensor(interaction)
+
         return data
 
     def __len__(self) -> int:

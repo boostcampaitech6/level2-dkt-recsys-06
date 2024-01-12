@@ -1,0 +1,22 @@
+program: train.py
+name: lightgcn_sweep
+description: lightgcn sweep
+project: level2-lightgcn
+entity: boostcamp6-recsys6
+method: bayes
+metric:
+  name: valid_auc_epoch
+  goal: maximize
+parameters:
+  lr:
+    min: 0.000001
+    max: 0.001
+  n_epochs:
+    min: 10
+    max: 30
+  n_layers:
+    min: 2
+    max: 5
+  hidden_dim:
+    min: 32
+    max: 128

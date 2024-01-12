@@ -3,7 +3,7 @@ name: dkt_sweep
 description: dkt lstm sweep
 project: level2-dkt
 entity: boostcamp6-recsys6
-method: random
+method: bayes
 metric:
   name: valid_auc_epoch
   goal: maximize
@@ -46,3 +46,5 @@ parameters:
     max: 10
   log_steps:
     value: 50
+  new_num_feats:
+    value: ['SolvingTime', 'same_tag_cumulative']
