@@ -48,7 +48,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
         )
 
         # VALID
-        auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
+        _, auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
 
         wandb.log(
             dict(
@@ -100,7 +100,7 @@ def train(
     losses = []
     for step, batch in enumerate(train_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
         targets = batch["correct"]
 
         loss = compute_loss(preds=preds, targets=targets)
@@ -112,8 +112,8 @@ def train(
             logger.info("Training steps: %s Loss: %.4f", step, loss.item())
 
         # predictions
-        preds = sigmoid(preds[:, -1])
-        targets = targets[:, -1]
+        preds = sigmoid(preds[:, -1])  # 마지막 time-step의 output
+        targets = targets[:, -1]  # 마지막 time-step의 label
 
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
@@ -134,10 +134,15 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
     total_preds = []
     total_targets = []
+    losses = []
+
     for step, batch in enumerate(valid_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
         targets = batch["correct"]
+
+        loss = compute_loss(preds=preds, targets=targets)
+        losses.append(loss)
 
         # predictions
         preds = sigmoid(preds[:, -1])
@@ -146,13 +151,14 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
 
+    losses_avg = sum(losses) / len(losses)
     total_preds = torch.concat(total_preds).cpu().numpy()
     total_targets = torch.concat(total_targets).cpu().numpy()
 
     # Train AUC / ACC
     auc, acc = get_metric(targets=total_targets, preds=total_preds)
     logger.info("VALID AUC : %.4f ACC : %.4f", auc, acc)
-    return auc, acc
+    return auc, acc, losses_avg
 
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
@@ -162,7 +168,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
     total_preds = []
     for step, batch in enumerate(test_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
 
         # predictions
         preds = sigmoid(preds[:, -1])
@@ -180,6 +186,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
 
 def get_model(args) -> nn.Module:
     model_args = dict(
+        args=args,
         hidden_dim=args.hidden_dim,
         n_layers=args.n_layers,
         n_tests=args.n_tests,
@@ -203,6 +210,7 @@ def get_model(args) -> nn.Module:
     except Exception as e:
         logger.warn("Error while loading %s with args: %s", model_name, model_args)
         raise e
+
     return model
 
 
@@ -217,7 +225,7 @@ def compute_loss(preds: torch.Tensor, targets: torch.Tensor):
     loss = get_criterion(pred=preds, target=targets.float())
 
     # 마지막 시퀀드에 대한 값만 loss 계산
-    loss = loss[:, -1]
+    loss = loss[:, -1]  # (batch, max_seq_len) -> (batch,1)
     loss = torch.mean(loss)
     return loss
 
@@ -230,7 +238,9 @@ def update_params(
     args,
 ):
     loss.backward()
-    nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
+    nn.utils.clip_grad_norm_(
+        model.parameters(), args.clip_grad
+    )  # gradient 크기를 너무 커지지도 너무 작아지지도 않게 조절 (이전 gradient의 변화량 기준으로)
     if args.scheduler == "linear_warmup":
         scheduler.step()
     optimizer.step()

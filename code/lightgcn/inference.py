@@ -16,9 +16,7 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     logger.info("Preparing data ...")
-    train_data, test_data, n_node = prepare_dataset(
-        device=device, data_dir=args.data_dir
-    )
+    train_data, test_data, n_node = prepare_dataset(device=device, data_dir=args.data_dir)
 
     logger.info("Loading Model ...")
     weight: str = os.path.join(args.model_dir, args.model_name)
@@ -32,10 +30,7 @@ def main(args):
     model = model.to(device)
 
     logger.info("Make Predictions & Save Submission ...")
-    trainer.inference(
-        args=args, model=model, data=test_data, output_dir=args.output_dir
-    )
-
+    trainer.inference(args=args, model=model, data=test_data, output_dir=args.output_dir)
 
 if __name__ == "__main__":
     args = parse_args()

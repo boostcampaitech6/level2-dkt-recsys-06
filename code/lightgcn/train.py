@@ -13,30 +13,24 @@ from datetime import datetime
 import pytz
 
 import warnings
-
 warnings.filterwarnings("ignore")
 
 logger = get_logger(logging_conf)
-korea = pytz.timezone("Asia/Seoul")
+korea = pytz.timezone('Asia/Seoul')
 current_time = datetime.now(korea).strftime("%m-%d %H:%M")
-
 
 def main(args: argparse.Namespace):
     wandb.login()
-    wandb.init(
-        project="level2-lightgcn", config=vars(args), entity="boostcamp6-recsys6"
-    )
-    wandb.run.name = "Wonhee Lee " + current_time
+    wandb.init(project="level2-lightgcn", config=vars(args), entity="boostcamp6-recsys6")
+    wandb.run.name = "Hyeongjin Cho " + current_time
     wandb.run.save()
     set_seeds(args.seed)
-
+    
     use_cuda: bool = torch.cuda.is_available() and args.use_cuda_if_available
     device = torch.device("cuda" if use_cuda else "cpu")
 
     logger.info("Preparing data ...")
-    train_data, test_data, n_node = prepare_dataset(
-        device=device, data_dir=args.data_dir
-    )
+    train_data, test_data, n_node = prepare_dataset(device=device, data_dir=args.data_dir)
 
     logger.info("Building Model ...")
     model = trainer.build(
@@ -46,7 +40,7 @@ def main(args: argparse.Namespace):
         alpha=args.alpha,
     )
     model = model.to(device)
-
+    
     logger.info("Start Training ...")
     trainer.run(
         model=model,

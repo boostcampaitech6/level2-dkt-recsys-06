@@ -3,9 +3,11 @@ import torch.nn as nn
 from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, BertModel
 
 
+# 범주형 -> embedding -> linear
 class ModelBase(nn.Module):
     def __init__(
         self,
+        args,
         hidden_dim: int = 64,
         n_layers: int = 2,
         n_tests: int = 1538,
@@ -18,10 +20,12 @@ class ModelBase(nn.Module):
         self.n_tests = n_tests
         self.n_questions = n_questions
         self.n_tags = n_tags
+        self.args = args
 
+        ## CATEGORICALS
         # Embeddings
         # hd: Hidden dimension, intd: Intermediate hidden dimension
-        hd, intd = hidden_dim, hidden_dim // 3
+        dim_cat, intd = hidden_dim, hidden_dim // 3
         self.embedding_interaction = nn.Embedding(
             3, intd
         )  # interaction은 현재 correct로 구성되어있다. correct(1, 2) + padding(0)
@@ -29,19 +33,49 @@ class ModelBase(nn.Module):
         self.embedding_question = nn.Embedding(n_questions + 1, intd)
         self.embedding_tag = nn.Embedding(n_tags + 1, intd)
 
-        # Concatentaed Embedding Projection
-        self.comb_proj = nn.Linear(intd * 4, hd)
+        # 추가된 범주형 feature 있으면 embedding 만들기
+        self.new_embeddings = []
+        if len(self.args.new_cat_feats) > 0:
+            for n_cat in self.args.n_cat_feats:
+                self.new_embeddings.append(
+                    nn.Embedding(n_cat + 1, intd).to(self.args.device)
+                )
 
-        # Fully connected layer
-        self.fc = nn.Linear(hd, 1)
+        # Concatentaed Embedding Linear Projection
+        self.comb_proj = nn.Linear(intd * (len(args.cat_feats) - 1), dim_cat)
+        self.layer_norm_cat = nn.LayerNorm(dim_cat)
 
-    def forward(self, test, question, tag, correct, mask, interaction):
+        ## NUMERICALS
+        # linear: 수치형 변수 두 개 이상 -> linear -> layer_norm
+        dim_num = 0
+        if len(self.args.num_feats) > 1:
+            dim_num = dim_cat
+            self.comb_nums = nn.Linear(len(self.args.num_feats), dim_num).to(
+                self.args.device
+            )  # 수치형 추상화
+            self.layer_norm_num = nn.LayerNorm(dim_num)
+
+        # Fully connected layer: output layer
+        self.fc = nn.Linear(hidden_dim, 1)
+
+    # def forward(self, test, question, tag, correct, mask, interaction):
+    def forward(self, data):
+        interaction, test, question, tag, correct, mask = (
+            data["interaction"],
+            data["test"],
+            data["question"],
+            data["tag"],
+            data["correct"],
+            data["mask"],
+        )
+
         batch_size = interaction.size(0)
         # Embedding
-        embed_interaction = self.embedding_interaction(interaction.int())
-        embed_test = self.embedding_test(test.int())
-        embed_question = self.embedding_question(question.int())
-        embed_tag = self.embedding_tag(tag.int())
+        embed_interaction = self.embedding_interaction(interaction)
+        embed_test = self.embedding_test(test)
+        embed_question = self.embedding_question(question)
+        embed_tag = self.embedding_tag(tag)
+
         embed = torch.cat(
             [
                 embed_interaction,
@@ -51,34 +85,62 @@ class ModelBase(nn.Module):
             ],
             dim=2,
         )
-        X = self.comb_proj(embed)
+
+        # 새로운 범주형 변수의 embedding을 concatenate
+        if len(self.new_embeddings) > 0:
+            for i, new_embedding in enumerate(self.new_embeddings):
+                cat_feat = data[f"new_cat_feats_{i}"]
+                temp = new_embedding(cat_feat.int())
+                embed = torch.cat([embed, temp], dim=2)
+
+        X = self.comb_proj(embed)  # embedding linear projection
+        X = self.layer_norm_cat(X)
+
+        # 수치형 변수
+        if len(self.args.num_feats) > 1:
+            num_feat = data["num_feats_0"].reshape(batch_size, -1, 1)
+            for i in range(1, len(self.args.num_feats)):
+                tmp = data[f"num_feats_{i}"].reshape(batch_size, -1, 1)
+                num_feat = torch.cat([num_feat, tmp], dim=2)
+
+            X_num = self.comb_nums(
+                num_feat
+            )  # [batch_size, seq_len, len(num_feats)] -> [b,s,hd]
+            X_num = self.layer_norm_num(X_num)
+
+            X = torch.cat([X, X_num], dim=2)
+
         return X, batch_size
 
 
 class LSTM(ModelBase):
     def __init__(
         self,
+        args,
         hidden_dim: int = 64,
         n_layers: int = 2,
         n_tests: int = 1538,
         n_questions: int = 9455,
         n_tags: int = 913,
-        **kwargs
+        **kwargs,
     ):
-        super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
-        self.lstm = nn.LSTM(
-            self.hidden_dim, self.hidden_dim, self.n_layers, batch_first=True
-        )
+        super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
 
-    def forward(self, test, question, tag, correct, mask, interaction):
-        X, batch_size = super().forward(
-            test=test,
-            question=question,
-            tag=tag,
-            correct=correct,
-            mask=mask,
-            interaction=interaction,
-        )
+        self.args = args
+
+        if len(self.args.new_num_feats) > 1:
+            self.lstm = nn.LSTM(
+                self.hidden_dim * 2, self.hidden_dim, self.n_layers, batch_first=True
+            )
+        else:
+            self.lstm = nn.LSTM(
+                self.hidden_dim, self.hidden_dim, self.n_layers, batch_first=True
+            )
+
+    # def forward(self, test, question, tag, correct, mask, interaction):
+    def forward(self, data):
+        X, batch_size = super().forward(data=data)
+
         out, _ = self.lstm(X)
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
         out = self.fc(out).view(batch_size, -1)
@@ -95,7 +157,7 @@ class LSTMATTN(ModelBase):
         n_tags: int = 913,
         n_heads: int = 2,
         drop_out: float = 0.1,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
         self.n_heads = n_heads
@@ -150,7 +212,7 @@ class BERT(ModelBase):
         n_heads: int = 2,
         drop_out: float = 0.1,
         max_seq_len: float = 20,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
         self.n_heads = n_heads

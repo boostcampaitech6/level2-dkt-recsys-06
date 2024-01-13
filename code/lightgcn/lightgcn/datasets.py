@@ -55,6 +55,7 @@ def indexing_data(data: pd.DataFrame) -> dict:
     return id2index
 
 
+# user-item의 index만을 쓰네
 def process_data(data: pd.DataFrame, id2index: dict, device: str) -> dict:
     edge, label = [], []
     for user, item, acode in zip(data.userID, data.assessmentItemID, data.answerCode):
