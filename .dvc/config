@@ -1,0 +1,4 @@
+[core]
+    remote = dkt_storage
+['remote "dkt_storage"']
+    url = gdrive://1OIcZNcJNQYWZ2Rh7uXjrQkaxhom_G86u
