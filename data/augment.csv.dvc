@@ -1,0 +1,5 @@
+outs:
+- md5: f3719fcefbc3a02069806053e8284876
+  size: 134
+  hash: md5
+  path: augment.csv
