@@ -5,3 +5,7 @@ code/**/__pycache__
 code/**/run.log
 
 /**/*.csv
+
+*.tsv
+
+*.tfevents
