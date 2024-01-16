@@ -29,8 +29,9 @@ def main(args):
 
     logger.info("Preparing data ...")
     preprocess = Preprocess(args)
-    preprocess.load_train_data(file_name=args.file_name)
+    preprocess.load_train_data(args=args, file_name=args.file_name)
     train_data: np.ndarray = preprocess.get_train_data()
+
     train_data, valid_data = preprocess.split_data(data=train_data)
     wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
     wandb.run.name = "Wook Heo " + current_time
