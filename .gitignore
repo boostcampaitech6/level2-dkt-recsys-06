@@ -4,4 +4,4 @@ code/**/__pycache__
 
 code/**/run.log
 
-*.csv
+/**/*.csv
