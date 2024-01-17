@@ -1,4 +1,5 @@
 import argparse
+from distutils.util import strtobool
 
 
 def parse_args():
@@ -69,6 +70,9 @@ def parse_args():
         type=str,
         help="submission file name",
     )
+
+    ### graph embedding
+    parser.add_argument("--graph_embed", default='False', type=strtobool, help='use graph embedding?')
 
     ### feature engineering
     # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형

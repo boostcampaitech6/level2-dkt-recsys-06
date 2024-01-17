@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch.nn.functional import sigmoid
 import wandb
+import pickle
 
 from .criterion import get_criterion
 from .dataloader import get_loaders
@@ -20,8 +21,12 @@ logger = get_logger(logger_conf=logging_conf)
 
 
 def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
+
+    with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
+        dict_graph = pickle.load(file)
+    
     train_loader, valid_loader = get_loaders(
-        args=args, train=train_data, valid=valid_data
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
     )
 
     # For warmup scheduler which uses step interval

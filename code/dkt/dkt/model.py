@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, BertModel
+import pickle
 
 
 # 범주형 -> embedding -> linear
@@ -42,7 +43,8 @@ class ModelBase(nn.Module):
                 )
 
         # Concatentaed Embedding Linear Projection
-        self.comb_proj = nn.Linear(intd * (len(args.cat_feats) - 1), dim_cat)
+        self.comb_proj_dim = intd * (len(args.cat_feats) - 1)+64 if self.args.graph_embed else intd * (len(args.cat_feats) - 1)
+        self.comb_proj = nn.Linear(self.comb_proj_dim, dim_cat)
         self.layer_norm_cat = nn.LayerNorm(dim_cat)
 
         ## NUMERICALS
@@ -70,7 +72,8 @@ class ModelBase(nn.Module):
         )
 
         batch_size = interaction.size(0)
-        # Embedding
+        
+        ## 1) 범주형변수 Embedding
         embed_interaction = self.embedding_interaction(interaction)
         embed_test = self.embedding_test(test)
         embed_question = self.embedding_question(question)
@@ -92,11 +95,18 @@ class ModelBase(nn.Module):
                 cat_feat = data[f"new_cat_feats_{i}"]
                 temp = new_embedding(cat_feat.int())
                 embed = torch.cat([embed, temp], dim=2)
+        
+        # graph embedding
+        if self.args.graph_embed:
+            embed_graph = data['embed_graph']
+            embed = torch.cat([embed, embed_graph], dim=2)
+
 
         X = self.comb_proj(embed)  # embedding linear projection
         X = self.layer_norm_cat(X)
 
-        # 수치형 변수
+
+        ## 2) 수치형 변수
         if len(self.args.num_feats) > 1:
             num_feat = data["num_feats_0"].reshape(batch_size, -1, 1)
             for i in range(1, len(self.args.num_feats)):
@@ -242,3 +252,5 @@ class BERT(ModelBase):
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
         out = self.fc(out).view(batch_size, -1)
         return out
+
+

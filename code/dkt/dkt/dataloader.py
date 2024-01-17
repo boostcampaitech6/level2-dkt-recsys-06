@@ -9,6 +9,8 @@ import pandas as pd
 import torch
 from sklearn.preprocessing import LabelEncoder
 
+import pickle
+
 
 class Preprocess:
     def __init__(self, args):
@@ -48,28 +50,30 @@ class Preprocess:
 
         if not os.path.exists(self.args.asset_dir):
             os.makedirs(self.args.asset_dir)
+        
+        df['quiz'] = df['assessmentItemID']
 
         # testId, assessmentItemID, KnowledgeTag에 대해서 unknown 토큰 처리
         for col in cate_cols:
             le = LabelEncoder()
             if is_train:
                 # For UNKNOWN class
-                a = df[col].unique().tolist() + ["unknown"]
-                le.fit(a)
+                a = df[col].unique().tolist() + ["unknown"] # col: 가짓수?
+                le.fit(a) # 정렬 순으로 labeling해!
                 self.__save_labels(le, col)
             else:
                 label_path = os.path.join(self.args.asset_dir, col + "_classes.npy")
                 le.classes_ = np.load(label_path)
-
+                
                 df[col] = df[col].apply(
                     lambda x: x if str(x) in le.classes_ else "unknown"
                 )
-
+                    
             # 모든 컬럼이 범주형이라고 가정
             df[col] = df[col].astype(str)
             test = le.transform(df[col])
             df[col] = test
-
+        
         # timestamp -> timetuple
         def convert_time(s: str):
             timestamp = time.mktime(
@@ -119,12 +123,17 @@ class Preprocess:
         # 최종 피처선택
         # columns = ["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"]
         columns = self.args.feats
-        print(f"-----------------------\ncolumns:{columns}\n------------------------")
+
+        if self.args.graph_embed:
+            print(f"-----------------------\ncolumns:{columns + ['graph']}\n------------")
+        else:
+            print(f"-----------------------\ncolumns:{columns}\n------------------------")
         group = (
-            df[columns]
+            df[columns+['quiz']]
             .groupby("userID")
-            .apply(lambda r: tuple([r[col].values for col in columns[1:]]))
+            .apply(lambda r: tuple([r[col].values for col in columns[1:]+['quiz']]))
         )
+
         return group.values
 
     def load_train_data(self, args, file_name: str) -> None:
@@ -135,10 +144,11 @@ class Preprocess:
 
 
 class DKTDataset(torch.utils.data.Dataset):
-    def __init__(self, data: np.ndarray, args):
+    def __init__(self, data: np.ndarray, args, dict_graph):
         self.data = data
         self.max_seq_len = args.max_seq_len
         self.args = args
+        self.dict_graph = dict_graph
 
     def __getitem__(self, index: int) -> dict:
         row = self.data[index]
@@ -148,8 +158,12 @@ class DKTDataset(torch.utils.data.Dataset):
         question, test, correct, tag = row[0], row[1], row[2], row[3]
         new_cat_feats = row[4 : 4 + len(self.args.new_cat_feats)]  # 4번째부터 새로운 범주형
         num_feats = row[
-            4 + len(self.args.new_cat_feats) :
+            4 + len(self.args.new_cat_feats) : 4 + len(self.args.new_cat_feats) + len(self.args.new_num_feats)
         ]  # 뒤쪽 수치형 (-0때문에 -n slicing X)
+
+        if self.args.graph_embed:
+            quiz= row[-1]
+            embed_graph = [self.dict_graph[id] for id in quiz]
 
         # loader 넘어가기 위해 준비
         data = {
@@ -166,6 +180,9 @@ class DKTDataset(torch.utils.data.Dataset):
         if len(num_feats) > 0:
             for i, num_feat in enumerate(num_feats):
                 data[f"num_feats_{i}"] = torch.FloatTensor(num_feat)
+        if self.args.graph_embed:
+            data['embed_graph'] = torch.FloatTensor(embed_graph)
+
 
         # Generate mask: max seq len보다 길면 자르고 짧으면 그냥 둔다
         seq_len = len(row[0])
@@ -181,6 +198,10 @@ class DKTDataset(torch.utils.data.Dataset):
                     tmp = torch.zeros(self.max_seq_len, dtype=torch.int64)
                     tmp[self.max_seq_len - seq_len :] = data[k]
                     data[k] = torch.LongTensor(tmp)
+                elif k == 'embed_graph':
+                    tmp = torch.zeros((self.max_seq_len, 64), dtype=torch.float32)
+                    tmp[self.max_seq_len - seq_len :] = data[k]
+                    data[k] = tmp
                 else: # 수치형
                     tmp = torch.zeros(self.max_seq_len, dtype=torch.float32)
                     tmp[self.max_seq_len - seq_len :] = data[k]
@@ -197,6 +218,7 @@ class DKTDataset(torch.utils.data.Dataset):
         interaction = (interaction * interaction_mask).to(torch.int64)
         data["interaction"] = torch.LongTensor(interaction)
 
+
         return data
 
     def __len__(self) -> int:
@@ -204,13 +226,13 @@ class DKTDataset(torch.utils.data.Dataset):
 
 
 def get_loaders(
-    args, train: np.ndarray, valid: np.ndarray
+    args, train: np.ndarray, valid: np.ndarray, dict_graph: dict
 ) -> Tuple[torch.utils.data.DataLoader]:
     pin_memory = False
     train_loader, valid_loader = None, None
 
     if train is not None:
-        trainset = DKTDataset(train, args)
+        trainset = DKTDataset(train, args, dict_graph)
         train_loader = torch.utils.data.DataLoader(
             trainset,
             num_workers=args.num_workers,
@@ -219,7 +241,7 @@ def get_loaders(
             pin_memory=pin_memory,
         )
     if valid is not None:
-        valset = DKTDataset(valid, args)
+        valset = DKTDataset(valid, args, dict_graph)
         valid_loader = torch.utils.data.DataLoader(
             valset,
             num_workers=args.num_workers,
