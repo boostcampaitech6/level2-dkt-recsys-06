@@ -4,8 +4,10 @@ code/**/__pycache__
 
 code/**/run.log
 
-/**/*.csv
+*.csv
 
 *.tsv
 
 *.tfevents
+
+code/**/catboost_info
