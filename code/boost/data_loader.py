@@ -32,7 +32,8 @@ class Dataset:
         test = df[df["answerCode"] == -1]
         data["train"], data["test"] = train, test
         return data
-
+    
+    
     def split_data(self) -> dict:
         """
         data의 구성
@@ -40,8 +41,9 @@ class Dataset:
         data['train_split'] : 전체 user_id별 마지막으로 푼 문제를 제외한 데이터
         data['valid'] : 전체 user_id별 마지막으로 푼 문제에 대한 데이터
         """
-        
         data = self.restruct_data()
+        FE_train= type_conversion(data["train"])
+
         df = data["train"]
         df["is_valid"] = [False] * df.shape[0]
         df.loc[
@@ -51,19 +53,23 @@ class Dataset:
         train, valid = df[df["is_valid"] == False], df[df["is_valid"] == True]
         train = train.drop("is_valid", axis=1)
         valid = valid.drop("is_valid", axis=1)
-        data["train_split"], data["valid"] = train, valid
-        
-        return data
+        data["train_split"], data["valid"] = train, valid  
+        return data, FE_train
 
+def type_conversion(df):
+        le = preprocessing.LabelEncoder()
+
+        for feature in df.columns:
+            if df[feature].dtypes == "object" or df[feature].dtypes == "UInt32":
+                df[feature] = le.fit_transform(df[feature])
+        return df
 
 class Preprocess:
     def __init__(self, args, data: dict):
         self.args = args
         self.data = data
 
-    
-    def type_conversion(self) -> dict:
-        
+    def preprocess(self) -> dict:
         self.data["train_x"] = self.data["train"].drop("answerCode", axis=1)
         self.data["train_y"] = self.data["train"]["answerCode"]
 
@@ -71,8 +77,8 @@ class Preprocess:
         self.data["valid_y"] = self.data["valid"]["answerCode"]
 
         self.data["test"] = self.data["test"].drop("answerCode", axis=1)
-        
-        # 카테고리형 feature
+
+        # 카테고리형 feature -> 정수
         for state in ["train_x", "valid_x", "test"]:
             df = self.data[state]
             le = preprocessing.LabelEncoder()
@@ -81,8 +87,6 @@ class Preprocess:
                     df[feature] = le.fit_transform(df[feature])
             self.data[state] = df
         return self.data
-        
+    
 
-    def preprocess(self) -> dict:
-        data = self.type_conversion()
-        return data
+

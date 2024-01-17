@@ -3,7 +3,14 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    
+    ### 중요 ###
+    parser.add_argument("--model", default="CAT", type=str, help="model type")
+    parser.add_argument('--fe', default="N") # train시 valid set 쓸건지 안쓸건지
+    parser.add_argument('--trials', type=int, default=1) #랜덤 조합으로 몇번
+    
 
+    ## 일반 ##
     parser.add_argument("--seed", default=42, type=int, help="seed")
     parser.add_argument("--device", default="gpu", type=str, help="cpu or gpu")
     parser.add_argument(
@@ -27,20 +34,6 @@ def parse_args():
     parser.add_argument(
         "--test_file_name", default="test_data.csv", type=str, help="test file name"
     )
-
-    ### boosting model 관련 argument ###
-    parser.add_argument(
-        "--learning_rate", default="0.001", type=float, help="learning rate"
-    )
-    parser.add_argument("--n_estimators", default="100", type=int, help="n_estimators")
-    parser.add_argument("--max_depth", default="6", type=int, help="max_depth")
-    parser.add_argument("--num_leaves", default="31", type=int, help="num_leaves")
-    parser.add_argument("--iterations", default="2000", type=int, help="iterations")
-    
-
-    ### 중요 ###
-    parser.add_argument("--model", default="CAT", type=str, help="model type")
-    parser.add_argument('--trials', type=int, default=2) #랜덤 조합으로 몇번 
     
     args = parser.parse_args()
 
