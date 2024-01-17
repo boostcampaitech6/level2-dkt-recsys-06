@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 # 1. FEATURE 선택
 # 2. model 선택, default: CAT, args.py에 있음
 # 3. train시 valid set 쓸건지 안쓸건지, default: N, args.py에 있음
-# 4. optuna 시도 횟수, default: n_trials=10, 보통 100번이상이면 수렴됨, args.py에 있음
+# 4. optuna 시도 횟수, default: n_trials=1, 보통 100번이상이면 수렴됨, args.py에 있음
 # 5. optuna params, trainer.py에 있음
 
 

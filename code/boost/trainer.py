@@ -243,9 +243,9 @@ def get_feature_importance(model, feature_names, model_type):
         if model_type ==  'catboost':
             importance = model.get_feature_importance()
         elif model_type == 'xgboost':
-            importance = model.get_score(importance_type='weight')
+            importance = model.feature_importances_
         elif model_type == 'lightgbm':
-            importance = model.feature_importance()
+            importance = model.feature_importances_
 
         feature_importance = np.array(importance)
         feature_names = np.array(feature_names)
