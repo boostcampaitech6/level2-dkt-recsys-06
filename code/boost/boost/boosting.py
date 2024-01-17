@@ -26,7 +26,7 @@ class boosting_model:
         if args.model == "CAT":
             self.model = cat.CatBoostRegressor(
                 learning_rate=self.args.learning_rate,
-                n_estimators=self.args.n_estimators,
+                iterations=self.args.n_estimators,
                 random_state=self.args.random_state,
                 max_depth=self.args.max_depth,
                 reg_lambda=self.args.reg_lambda,
@@ -51,6 +51,7 @@ class boosting_model:
         elif args.model == "LGBM":
             self.model = lgbm.LGBMRegressor(
                 learning_rate=self.args.learning_rate,
+                num_round=self.args.n_estimators,
                 random_state=self.args.random_state,
                 max_depth=self.args.max_depth,
                 reg_lambda=self.args.reg_lambda,
@@ -91,7 +92,6 @@ class boosting_model:
                 data["train_y"],
                 eval_set=[(data["valid_x"][self.feature], data["valid_y"])],
                 eval_metric="AUC",
-                verbose=100,
             )
         y_pred = self.model.predict(data["valid_x"][self.feature])
         auc = accuracy_score(data["valid_y"], np.where(y_pred >= 0.5, 1, 0))

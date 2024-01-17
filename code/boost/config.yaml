@@ -9,7 +9,7 @@ metric:
   goal: maximize
 parameters:
   model:
-    values: ['CAT', 'XG', 'LGBM']
+    values: ['CAT'] #, 'XG', 'LGBM']
   feats:
     values: [
       'categorize_solvingTime categorize_CorrectnessRate categorize_TagAccuracy', 
