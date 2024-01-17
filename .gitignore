@@ -3,3 +3,8 @@
 code/**/__pycache__
 
 code/**/run.log
+
+*.csv
+
+/**/catboost_info
+
