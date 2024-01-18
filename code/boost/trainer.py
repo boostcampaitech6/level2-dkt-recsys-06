@@ -16,7 +16,7 @@ import json
 # optuna
 def objective(trial,args, FEATURE,data):
     
-    # CAT : regressor
+    # CAT : regressor->classifier
     if args.model == "CAT":
         params_CAT = {
         'has_time' : True,        
@@ -45,35 +45,37 @@ def objective(trial,args, FEATURE,data):
         y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
 
     # XG : classifier
-    elif args.model == "XG":
-        param_XG = {
-        'random_state': 42,
-        'objective': 'binary:logistic',  # 이진 분류 문제
-        'eval_metric': 'auc',
-        'tree_method': 'gpu_hist',  # GPU 가속화를 사용하려면 'gpu_hist'로 설정
-        'booster': 'gbtree',  # 일반적인 그래디언트 부스팅 결정 
-        'num_round' : trial.suggest_int('num_round', 1000, 5000),  
-
-        'tree_method': 'hist',  # 또는 'gpu_hist'로 설정
-        'booster': trial.suggest_categorical('booster', ['gbtree', 'gblinear', 'dart']),
-        'lambda': trial.suggest_loguniform('lambda', 1e-8, 1.0),
-        'alpha': trial.suggest_loguniform('alpha', 1e-8, 1.0),
-        'max_depth': trial.suggest_int('max_depth', 1, 10),
-        'eta': trial.suggest_loguniform('eta', 1e-8, 1.0),
-        'gamma': trial.suggest_loguniform('gamma', 1e-8, 1.0),
-        'grow_policy': trial.suggest_categorical('grow_policy', ['depthwise', 'lossguide'])
+    elif args.model=='XG':
+        params_XG = {
+            'objective': 'binary:logistic',  # 이진 분류 문제
+            'eval_metric': 'auc',
+            'tree_method': 'hist',  # GPU 가속 사용,
+            # 'device':'cuda', # cat_features 지원X -> 대신 pruner 적용
+            'booster': trial.suggest_categorical('booster', ['gbtree', 'dart']),
+            'lambda': trial.suggest_loguniform('lambda', 1e-5, 1.0),
+            'alpha': trial.suggest_loguniform('alpha', 1e-5, 1.0),
+            'max_depth': trial.suggest_int('max_depth', 3, 10),
+            'eta': trial.suggest_float('eta', 0.01, 0.2),
+            'gamma': trial.suggest_float('gamma', 0.1, 1.0),
+            'subsample': trial.suggest_float('subsample', 0.5, 1.0),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
+            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
         }
+
+        pruning_callback = optuna.integration.XGBoostPruningCallback(trial, "validation-auc")
+
         # 데이터셋
-        train_data = xgb.DMatrix(data["train_x"][FEATURE], label=data["train_y"])
-        valid_data = xgb.DMatrix(data["valid_x"][FEATURE], label=data["valid_y"])
+        train_data = xgb.DMatrix(data["train_x"][FEATURE], label=data["train_y"], enable_categorical=True)
+        valid_data = xgb.DMatrix(data["valid_x"][FEATURE], label=data["valid_y"], enable_categorical=True)
 
         # xgboost 모델 훈련
-        bst = xgb.train(param_XG, train_data, evals=[(valid_data, 'validation')], verbose_eval=100)
+        bst = xgb.train(params_XG, train_data, evals=[(valid_data, 'validation')], callbacks=[pruning_callback])
         
         # 예측
-        dtest = xgb.DMatrix(data["valid_x"][FEATURE])
+        dtest = xgb.DMatrix(data["valid_x"][FEATURE], enable_categorical=True)
         y_pred_proba = bst.predict(dtest)
         y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+
 
     # LGBM : classifier
     elif args.model == "LGBM":
@@ -134,7 +136,8 @@ class boosting_model:
 
             # 최적 하이퍼파라미터 출력
             print('Hyperparameters: {}'.format(study.best_params))
-            
+            self.best_params = study.best_params
+
             self.model = CatBoostClassifier(
                 **study.best_params,task_type='GPU', devices='cuda',  
                 custom_metric = 'accuracy', eval_metric = 'AUC',
@@ -143,15 +146,16 @@ class boosting_model:
             
         elif args.model == "XG":
             # Optuna 최적화
-            study = optuna.create_study(direction='maximize', study_name='XGBoostRegressor',sampler=optuna.sampler.TPESampler(seed=self.args.seed))
+            study = optuna.create_study(direction='maximize', study_name='XGBoostRegressor',sampler=optuna.samplers.TPESampler(seed=self.args.seed))
             study.optimize(lambda trial: objective(trial,self.args,self.feature, self.data), n_trials=args.trials)
 
             # 최적 하이퍼파라미터 출력
             print('Hyperparameters: {}'.format(study.best_params))
+            self.best_params = study.best_params
 
-            self.model = xgb.XGBClassifier(
-                **study.best_params, objective= 'binary:logistic', eval_metric= 'auc',
-            )
+            # self.model = xgb.XGBClassifier(
+                # **study.best_params, objective= 'binary:logistic', eval_metric= 'auc', enable_categorical=True
+            # )
 
         elif args.model == "LGBM":
             # Optuna 최적화
@@ -164,7 +168,7 @@ class boosting_model:
             self.model = lgbm.LGBMClassifier(
                **study.best_params, objective = 'binary', metric = 'auc'
             )
-
+            self.best_params = study.best_params
         else:
             raise Exception("cat,xg,lgbm 중 하나의 모델을 선택해주세요")
         
@@ -195,18 +199,23 @@ class boosting_model:
         # XG
         elif args.model == "XG":
             if args.fe == "N":
-                self.model.fit(
-                    FE_train[FEATURE],
-                    FE_train["answerCode"],
-                    verbose=200,
-                    )
+                # 데이터셋
+                train_data = xgb.DMatrix(FE_train[FEATURE], label=FE_train["answerCode"], enable_categorical=True)
+
+                self.model = xgb.train(self.best_params, train_data)
+
+                #  self.model.fit(
+                #     FE_train[FEATURE],
+                #     FE_train["answerCode"],
+                #     verbose=200,
+                #     )
             else:
                 print("Valid Data is used while training")
                 self.model.fit(
                     data["train_x"][self.feature],
                     data["train_y"],
                     eval_set=[(data["valid_x"][self.feature], data["valid_y"])],
-                    verbose=200,
+                    verbose=200, 
                     )
             model_type = 'xgboost'  
 
@@ -234,8 +243,11 @@ class boosting_model:
 
     def inference(self, data,save_time):
         # submission 제출하기 위한 코드
-        #test_pred = self.model.predict_proba(data["test"][self.feature])[:, 1]
-        test_pred = self.model.predict(data["test"][self.feature])
+        if self.args.model == 'XG':
+            test_pred = self.model.predict(data["test"][self.feature])
+        else:
+            test_pred = self.model.predict_proba(data["test"][self.feature])[:, 1]
+
         data["test"]["prediction"] = test_pred
         submission = data["test"]["prediction"].reset_index(drop=True).reset_index()
         submission.rename(columns={"index": "id"}, inplace=True)
@@ -243,6 +255,15 @@ class boosting_model:
         submission.to_csv(
             os.path.join(self.args.output_dir, submission_filename), index=False
         )
+
+        # model save
+        joblib.dump(self.model, f'model/{self.args.model}_{save_time}.pkl')
+
+        # best parameter 저장
+        os.makedirs(f'log/{self.args.model}', exist_ok=True)
+        with open(f'log/{self.args.model}/{self.args.model}_{save_time}.json', 'w') as f:
+            json.dump(self.best_params, f)
+
 
 
 def get_feature_importance(model, feature_names, model_type):
