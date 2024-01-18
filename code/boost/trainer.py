@@ -6,7 +6,7 @@ from sklearn import preprocessing
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import accuracy_score
 
-from catboost import CatBoostClassifier
+from catboost import CatBoostClassifier, CatBoostRegressor
 import xgboost as xgb
 import lightgbm as lgbm
 import optuna
@@ -21,7 +21,7 @@ def objective(trial,args, FEATURE,data):
         params_CAT = {
         'has_time' : True,        
         'random_seed': 42,
-        'objective': 'Logloss',  # 이진 분류 문제
+        'objective': 'RMSE',  # 이진 분류 문제
         'custom_metric': 'AUC',  # 평가 지표로 AUC 사용
         'eval_metric': 'AUC',  # AUC를 사용하여 평가
       
@@ -36,11 +36,12 @@ def objective(trial,args, FEATURE,data):
         'bagging_temperature': trial.suggest_float('bagging_temperature', 0.1, 0.5), # 'bagging_temperature': 부스팅 트리의 각 반복에서 샘플을 선택하는 온도 매개변수입니다. 주어진 범위 내에서 부동 소수점 값
         }
 
-        bst = CatBoostClassifier(**params_CAT,task_type='GPU', devices='cuda',verbose=100)
+        bst = CatBoostRegressor(**params_CAT,task_type='GPU', devices='cuda',verbose=100)
         bst.fit(data["train_x"][FEATURE], data["train_y"], cat_features= FEATURE, eval_set=(data["valid_x"][FEATURE], data["valid_y"]))
 
         # 예측
-        y_pred_proba = bst.predict_proba(data["valid_x"][FEATURE])[:, 1]
+        y_pred_proba = bst.predict(data["valid_x"][FEATURE])
+        #y_pred_proba = bst.predict_proba(data["valid_x"][FEATURE])[:, 1]
         y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
 
     elif args.model == "XG":
@@ -127,15 +128,16 @@ class boosting_model:
         
         if args.model == "CAT":
             # Optuna 최적화
-            study = optuna.create_study(direction='maximize',study_name='CatBoost_Classifier',sampler=optuna.samplers.TPESampler(seed=42))
+            study = optuna.create_study(direction='maximize',study_name='CatBoostRegressor',sampler=optuna.samplers.TPESampler(seed=42))
             study.optimize(lambda trial: objective(trial,self.args,self.feature, self.data), n_trials=args.trials)
 
             # 최적 하이퍼파라미터 출력
             print('Hyperparameters: {}'.format(study.best_params))
             
-            self.model = CatBoostClassifier(
-                **study.best_params,task_type='GPU', devices='cuda', objective= 'Logloss',  
-                custom_metric = 'AUC', eval_metric = 'AUC',              
+            self.model = CatBoostRegressor(
+                **study.best_params,task_type='GPU', devices='cuda',  
+                custom_metric = 'AUC', eval_metric = 'AUC',
+                #objective= 'RMSE'              
             )
             
         elif args.model == "XG":
@@ -167,7 +169,6 @@ class boosting_model:
         
 
     def training(self, data, args, FEATURE,FE_train):
-        print(self.feature)
         # CAT
         if args.model == "CAT":
             if args.fe == "N":
@@ -178,6 +179,7 @@ class boosting_model:
                     verbose=200,
                     )
             else:
+                print("Valid Data is used while training")
                 self.model.fit(
                     data["train_x"][self.feature],
                     data["train_y"],
@@ -198,6 +200,7 @@ class boosting_model:
                     verbose=200,
                     )
             else:
+                print("Valid Data is used while training")
                 self.model.fit(
                     data["train_x"][self.feature],
                     data["train_y"],
@@ -214,6 +217,7 @@ class boosting_model:
                     FE_train["answerCode"],
                     )
             else:
+                print("Valid Data is used while training")
                 self.model.fit(
                     data["train_x"][self.feature],
                     data["train_y"],
@@ -229,7 +233,8 @@ class boosting_model:
 
     def inference(self, data,save_time):
         # submission 제출하기 위한 코드
-        test_pred = self.model.predict_proba(data["test"][self.feature])[:, 1]
+        #test_pred = self.model.predict_proba(data["test"][self.feature])[:, 1]
+        test_pred = self.model.predict(data["test"][self.feature])
         data["test"]["prediction"] = test_pred
         submission = data["test"]["prediction"].reset_index(drop=True).reset_index()
         submission.rename(columns={"index": "id"}, inplace=True)

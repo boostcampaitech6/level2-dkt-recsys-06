@@ -11,23 +11,13 @@ from sklearn import preprocessing
 
 
 class Dataset:
-    def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
+    def __init__(self, train: pd.DataFrame):
         self.train = train
-        self.test = test
 
     def restruct_data(self) -> dict:
-        # 아직 FE merge하기 이전
-        """
-        Test data와 Train data를 concat하여 test에만 있는 유저 정보도 train으로 추가한다.
-        """
+        # train과 test 분할
         data = {}
-        self.train = self.train.sort_values(by=["userID", "Timestamp"]).reset_index(
-            drop=True
-        )
-        self.test = self.test.sort_values(by=["userID", "Timestamp"]).reset_index(
-            drop=True
-        )
-        df = pd.concat([self.train, self.test], axis=0) 
+        df = self.train
         train = df[df["answerCode"] >= 0]
         test = df[df["answerCode"] == -1]
         data["train"], data["test"] = train, test

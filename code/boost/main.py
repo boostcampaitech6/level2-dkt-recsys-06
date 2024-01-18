@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 # 1. FEATURE 선택
 # 2. model 선택, default: CAT, args.py에 있음
 # 3. train시 valid set 쓸건지 안쓸건지, default: N, args.py에 있음
-# 4. optuna 시도 횟수, default: n_trials=1, 보통 100번이상이면 수렴됨, args.py에 있음
+# 4. optuna 시도 횟수, default: n_trials=10, 보통 100번이상이면 수렴됨, args.py에 있음
 # 5. optuna params, trainer.py에 있음
 
 
@@ -42,9 +42,10 @@ def main(args):
     ######################## DATA LOAD
     print("### DATA LOAD ###")
     train = pd.read_csv(args.data_dir + args.file_name, parse_dates=["Timestamp"])
-    test = pd.read_csv(args.data_dir + args.test_file_name, parse_dates=["Timestamp"])
+    #test = pd.read_csv(args.data_dir + args.test_file_name, parse_dates=["Timestamp"])
+    #data = Dataset(train, test)
 
-    data = Dataset(train, test)
+    data = Dataset(train)
     data, FE_train = data.split_data()
 
     ######################## DATA PREPROCESSING
