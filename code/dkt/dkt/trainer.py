@@ -53,7 +53,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
         )
 
         # VALID
-        _, auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
 
         wandb.log(
             dict(
@@ -63,6 +63,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
                 train_acc_epoch=train_acc,
                 valid_auc_epoch=auc,
                 valid_acc_epoch=acc,
+                valid_loss_epoch=loss
             )
         )
 

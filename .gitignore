@@ -14,3 +14,5 @@ code/dkt/data/test_data.csv
 code/dkt/data/train_data.csv
 code/dkt/asset/assessmentItemID_classes.npy
 code/dkt/asset/testId_classes.npy
+
+*.npy

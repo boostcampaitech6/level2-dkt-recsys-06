@@ -1,0 +1,7 @@
+{
+"meta":{"test_sets":["test"],"test_metrics":[{"best_value":"Max","name":"AUC"},{"best_value":"Min","name":"RMSE"}],"learn_metrics":[{"best_value":"Min","name":"RMSE"}],"launch_mode":"Train","parameters":"","iteration_count":100,"learn_sets":["learn"],"name":"experiment"},
+"iterations":[
+{"learn":[0.475400405],"iteration":0,"passed_time":0.01741359503,"remaining_time":1.723945908,"test":[0.6892502093,0.5209398627]},
+{"learn":[0.4749752521],"iteration":5,"passed_time":0.1060659943,"remaining_time":1.661700577,"test":[0.6892502093,0.5205600829]},
+{"learn":[0.474554437],"iteration":10,"passed_time":0.1904748474,"remaining_time":1.541114674,"test":[0.6892502093,0.5201835861]}
+]}
