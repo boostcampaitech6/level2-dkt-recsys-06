@@ -22,7 +22,7 @@ def objective(trial,args, FEATURE,data):
         'has_time' : True,        
         'random_seed': 42,
         'objective': 'Logloss',  # 이진 분류 문제
-        'custom_metric': 'accuracy',  # 평가 지표로 AUC 사용
+        'custom_metric': 'AUC',  # 평가 지표로 AUC 사용
         'eval_metric': 'AUC',  # AUC를 사용하여 평가
       
         'iterations': trial.suggest_int('iterations', 1000, 5000), # iterations: 트리의 개수 또는 부스팅 라운드 수
@@ -131,7 +131,7 @@ class boosting_model:
         
         if args.model == "CAT":
             # Optuna 최적화
-            study = optuna.create_study(direction='maximize',study_name='CatBoostRegressor',sampler=optuna.samplers.TPESampler(seed=self.args.seed)) #seed args에서 끌어오기
+            study = optuna.create_study(direction='maximize',study_name='CatBoostClassifier',sampler=optuna.samplers.TPESampler(seed=self.args.seed, multivariate=True)) #seed args에서 끌어오기
             study.optimize(lambda trial: objective(trial,self.args,self.feature, self.data), n_trials=args.trials)
 
             # 최적 하이퍼파라미터 출력
@@ -139,8 +139,8 @@ class boosting_model:
             self.best_params = study.best_params
 
             self.model = CatBoostClassifier(
-                **study.best_params,task_type='GPU', devices='cuda',  
-                custom_metric = 'accuracy', eval_metric = 'AUC',
+                **study.best_params, task_type='GPU', devices='cuda',  
+                custom_metric = 'AUC', eval_metric = 'AUC',
                 objective= 'Logloss'              
             )
             
