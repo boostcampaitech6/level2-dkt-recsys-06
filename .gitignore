@@ -5,3 +5,12 @@ code/**/__pycache__
 code/**/run.log
 
 *.csv
+
+*.pt
+code/lightgcn/models/best_model.pt
+code/lightgcn/models/last_model.pt
+code/submit/lightgcn_submission.csv
+code/dkt/data/test_data.csv
+code/dkt/data/train_data.csv
+code/dkt/asset/assessmentItemID_classes.npy
+code/dkt/asset/testId_classes.npy
