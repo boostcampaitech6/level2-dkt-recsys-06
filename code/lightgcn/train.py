@@ -15,6 +15,8 @@ import pytz
 import warnings
 warnings.filterwarnings("ignore")
 
+import pickle
+
 logger = get_logger(logging_conf)
 korea = pytz.timezone('Asia/Seoul')
 current_time = datetime.now(korea).strftime("%m-%d %H:%M")
@@ -30,28 +32,39 @@ def main(args: argparse.Namespace):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     logger.info("Preparing data ...")
-    train_data, test_data, n_node = prepare_dataset(device=device, data_dir=args.data_dir)
+    train_data, test_data, n_node, id2index = prepare_dataset(device=device, data_dir=args.data_dir)
 
     logger.info("Building Model ...")
     model = trainer.build(
         n_node=n_node,
         embedding_dim=args.hidden_dim,
-        num_layers=args.n_layers,
+        num_layers=args.n_layers, # default=1
         alpha=args.alpha,
     )
     model = model.to(device)
     
     logger.info("Start Training ...")
-    trainer.run(
+    graph_embedding = trainer.run(
         model=model,
         train_data=train_data,
         n_epochs=args.n_epochs,
         learning_rate=args.lr,
         model_dir=args.model_dir,
     )
+    
+    # {assessmentid: embedding}
+    embed_dict = {}
+    for id, index in id2index.items():        
+        if type(id) == str:
+            embed_dict[id] = graph_embedding[index]
+
+    # save graph embedding
+    with open(f'../dkt/graph_emb/graph_embed_{current_time}.pickle','wb') as fw:
+        pickle.dump(embed_dict, fw)
 
     wandb.finish()
 
+    
 
 if __name__ == "__main__":
     args = parse_args()
