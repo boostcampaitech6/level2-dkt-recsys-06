@@ -24,7 +24,7 @@ class boosting_model:
         self.data = data
 
         if args.model == "CAT":
-            self.model = cat.CatBoostRegressor(
+            self.model = cat.CatBoostClassifier(
                 learning_rate=self.args.learning_rate,
                 iterations=self.args.n_estimators,
                 random_state=self.args.random_state,
@@ -38,7 +38,7 @@ class boosting_model:
                 has_time=True,
             )
         elif args.model == "XG":
-            self.model = xgb.XGBRegressor(
+            self.model = xgb.XGBClassifier(
                 learning_rate=self.args.learning_rate,
                 n_estimators=self.args.n_estimators,
                 random_state=self.args.random_state,
@@ -49,7 +49,7 @@ class boosting_model:
                 max_leaves=self.args.max_leaves,
             )
         elif args.model == "LGBM":
-            self.model = lgbm.LGBMRegressor(
+            self.model = lgbm.LGBMClassifier(
                 learning_rate=self.args.learning_rate,
                 num_round=self.args.n_estimators,
                 random_state=self.args.random_state,
