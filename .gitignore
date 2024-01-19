@@ -8,6 +8,6 @@ code/**/run.log
 
 */**/*.csv
 
-
+*.csv
 
 /data/ephemeral/level2-dkt-recsys-06/data
