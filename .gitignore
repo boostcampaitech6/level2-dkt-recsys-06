@@ -16,3 +16,5 @@ code/dkt/asset/assessmentItemID_classes.npy
 code/dkt/asset/testId_classes.npy
 
 *.npy
+
+*.pickle
