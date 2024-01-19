@@ -13,6 +13,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # python main.py --model    # CAT, XG, LGBM   default="CAT", 
+# python main.py --model CAT --trials 1 --cat_feats userID assessmentItemID testId KnowledgeTag Month DayOfWeek TimeOfDay categorize_solvingTime categorize_ProblemAnswerRate categorize_TagAnswerRate categorize_TestAnswerRate ProblemNumber --n_window 2
 
 # Boosting 계열, 수정할수 있는 파라미터
 # 1. FEATURE 선택
@@ -25,12 +26,14 @@ warnings.filterwarnings("ignore")
 
 def main(args):
     ######################## SELECT FEATURE
-    FEATURE = ['userID', 'assessmentItemID', 'testId', 'KnowledgeTag', 
-               'SolvingTime', 
-               'CumulativeTime', 'problems_cumulative', 'problems_last7days', 'problems_last30days', 'Month', 'DayOfWeek', 'TimeOfDay', 
-               'categorize_solvingTime', 
-               'categorize_CorrectnessRate', 
-               'categorize_TagAccuracy'
+    FEATURE = ["userID","assessmentItemID","testId","KnowledgeTag",
+               "SolvingTime",
+               "CumulativeTime","problems_cumulative","problems_last7days","problems_last30days",
+               "CumulativeAnswerRate",
+               "CumulativeProblemCount",
+               "Month","DayOfWeek","TimeOfDay",
+               "ProblemAnswerRate","TagAnswerRate","TestAnswerRate",
+               "categorize_solvingTime","categorize_ProblemAnswerRate","categorize_TagAnswerRate","categorize_TestAnswerRate"
     ]
 
     # Time
@@ -46,7 +49,7 @@ def main(args):
     #data = Dataset(train, test)
 
     data = Dataset(train, args)
-    data, FE_train = data.split_data()
+    data, FE_train = data.split_data(args)
 
     ######################## DATA PREPROCESSING
     print("### DATA PREPROCESSING ###")

@@ -12,7 +12,7 @@ def parse_args():
 
     ## 일반 ##
     parser.add_argument(
-        "--file_name", default="FE.csv", type=str, help="train file name"
+        "--file_name", default="FE_v3.1.csv", type=str, help="train file name"
     )
     parser.add_argument(
         "--data_dir",
@@ -36,6 +36,8 @@ def parse_args():
     parser.add_argument("--device", default="gpu", type=str, help="cpu or gpu")
 
     parser.add_argument("--cat_feats", default=[], nargs="+", help='categorical_feature option')
+
+    parser.add_argument("--n_window", default=1, type=int, help='num val window')
     
     args = parser.parse_args()
 

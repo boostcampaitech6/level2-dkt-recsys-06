@@ -36,13 +36,26 @@ def objective(trial,args, FEATURE,data):
         'bagging_temperature': trial.suggest_float('bagging_temperature', 0.1, 0.5), # 'bagging_temperature': 부스팅 트리의 각 반복에서 샘플을 선택하는 온도 매개변수입니다. 주어진 범위 내에서 부동 소수점 값
         }
 
-        bst = CatBoostClassifier(**params_CAT,task_type='GPU', devices='cuda',verbose=100)
-        bst.fit(data["train_x"][FEATURE], data["train_y"], cat_features= args.cat_feats, eval_set=(data["valid_x"][FEATURE], data["valid_y"]))
+        score = []
+        for i in range(args.n_window):
 
-        # 예측
-        # y_pred_proba = bst.predict(data["valid_x"][FEATURE]) #회귀
-        y_pred_proba = bst.predict_proba(data["valid_x"][FEATURE])[:, 1] #분류
-        y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+            bst = CatBoostClassifier(**params_CAT,task_type='GPU', devices='cuda',verbose=100)
+            bst.fit(data[f"train_{i}_x"][FEATURE], data[f"train_{i}_y"], cat_features= args.cat_feats, eval_set=(data[f"valid_{i}_x"][FEATURE], data[f"valid_{i}_y"]))
+
+            # 예측
+            # y_pred_proba = bst.predict(data["valid_x"][FEATURE]) #회귀
+            y_pred_proba = bst.predict_proba(data[f"valid_{i}_x"][FEATURE])[:, 1] #분류
+            y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+
+            # 정확도 및 AUC 계산
+            accuracy = accuracy_score(data[f"valid_{i}_y"], y_pred_binary)
+            auc = roc_auc_score(data[f"valid_{i}_y"], y_pred_proba)
+            print('Accuracy: {:.4f}'.format(accuracy))
+            print('AUC: {:.4f}'.format(auc))
+        
+            score.append(auc)
+        result = sum(score)/len(score)
+        print('total AUC: {:.4f}'.format(result))
 
     # XG : classifier
     elif args.model=='XG':
@@ -64,17 +77,31 @@ def objective(trial,args, FEATURE,data):
 
         pruning_callback = optuna.integration.XGBoostPruningCallback(trial, "validation-auc")
 
-        # 데이터셋
-        train_data = xgb.DMatrix(data["train_x"][FEATURE], label=data["train_y"], enable_categorical=True)
-        valid_data = xgb.DMatrix(data["valid_x"][FEATURE], label=data["valid_y"], enable_categorical=True)
+       
 
-        # xgboost 모델 훈련
-        bst = xgb.train(params_XG, train_data, evals=[(valid_data, 'validation')], callbacks=[pruning_callback])
+        score = []
+        for i in range(args.n_window):
+            # 데이터셋
+            train_data = xgb.DMatrix(data[f"train_{i}_x"][FEATURE], label=data[f"train_{i}_y"], enable_categorical=True)
+            valid_data = xgb.DMatrix(data[f"valid_{i}_x"][FEATURE], label=data[f"valid_{i}_y"], enable_categorical=True)
+
+            # xgboost 모델 훈련
+            bst = xgb.train(params_XG, train_data, evals=[(valid_data, 'validation')], callbacks=[pruning_callback])
+            
+            # 예측
+            dtest = xgb.DMatrix(data[f"valid_{i}_x"][FEATURE], enable_categorical=True)
+            y_pred_proba = bst.predict(dtest)
+            y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+
+            # 정확도 및 AUC 계산
+            accuracy = accuracy_score(data[f"valid_{i}_y"], y_pred_binary)
+            auc = roc_auc_score(data[f"valid_{i}_y"], y_pred_proba)
+            print('Accuracy: {:.4f}'.format(accuracy))
+            print('AUC: {:.4f}'.format(auc))
         
-        # 예측
-        dtest = xgb.DMatrix(data["valid_x"][FEATURE], enable_categorical=True)
-        y_pred_proba = bst.predict(dtest)
-        y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+            score.append(auc)
+        result = sum(score)/len(score)
+        print('total AUC: {:.4f}'.format(result))
 
 
     # LGBM : classifier
@@ -102,25 +129,40 @@ def objective(trial,args, FEATURE,data):
         'cat_smooth': trial.suggest_float('cat_smooth', 1.0, 10.0),  # 카테고리 특징을 부드럽게 하는 파라미터
         }
 
-        # 데이터셋
-        train_data = lgbm.Dataset(data["train_x"][FEATURE], label=data["train_y"])
-        valid_data = lgbm.Dataset(data["valid_x"][FEATURE], label=data["valid_y"], reference=train_data)
-    
-        # LightGBM 모델 훈련
-        bst = lgbm.train(params_LGBM,train_data, valid_sets=valid_data, categorical_feature=args.cat_feats)
 
-        # 예측
-        y_pred_proba = bst.predict(data["valid_x"][FEATURE])
-        y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
 
     
-    # 정확도 및 AUC 계산
-    accuracy = accuracy_score(data["valid_y"], y_pred_binary)
-    auc = roc_auc_score(data["valid_y"], y_pred_proba)
-    print('Accuracy: {:.4f}'.format(accuracy))
-    print('AUC: {:.4f}'.format(auc))
+        # 정확도 및 AUC 계산
+        accuracy = accuracy_score(data["valid_y"], y_pred_binary)
+        auc = roc_auc_score(data["valid_y"], y_pred_proba)
+        print('Accuracy: {:.4f}'.format(accuracy))
+        print('AUC: {:.4f}'.format(auc))
 
-    return auc  # auc 최대화하는 방향으로
+        score = []
+        for i in range(args.n_window):
+
+            # 데이터셋
+            train_data = lgbm.Dataset(data[f"train_{i}_x"][FEATURE], label=data[f"train_{i}_y"])
+            valid_data = lgbm.Dataset(data[f"valid_{i}_x"][FEATURE], label=data[f"valid_{i}_y"], reference=train_data)
+        
+            # LightGBM 모델 훈련
+            bst = lgbm.train(params_LGBM,train_data, valid_sets=valid_data, categorical_feature=args.cat_feats)
+
+            # 예측
+            y_pred_proba = bst.predict(data[f"valid_{i}_x"][FEATURE])
+            y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+
+            # 정확도 및 AUC 계산
+            accuracy = accuracy_score(data[f"valid_{i}_y"], y_pred_binary)
+            auc = roc_auc_score(data[f"valid_{i}_y"], y_pred_proba)
+            print('Accuracy: {:.4f}'.format(accuracy))
+            print('AUC: {:.4f}'.format(auc))
+        
+            score.append(auc)
+        result = sum(score)/len(score)
+        print('total AUC: {:.4f}'.format(result))
+
+    return result  # auc 최대화하는 방향으로
 
 
 class boosting_model:
@@ -131,6 +173,8 @@ class boosting_model:
         
         if args.model == "CAT":
             # Optuna 최적화
+            pruner = optuna.pruners.MedianPruner(n_warmup_steps=10, n_startup_trials=500)
+
             study = optuna.create_study(direction='maximize',study_name='CatBoostClassifier',sampler=optuna.samplers.TPESampler(seed=self.args.seed, multivariate=True)) #seed args에서 끌어오기
             study.optimize(lambda trial: objective(trial,self.args,self.feature, self.data), n_trials=args.trials)
 
