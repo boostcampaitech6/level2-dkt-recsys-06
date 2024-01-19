@@ -12,7 +12,7 @@ def parse_args():
 
     ## 일반 ##
     parser.add_argument(
-        "--file_name", default="FE.csv", type=str, help="train file name"
+        "--file_name", default="FE_v3.csv", type=str, help="train file name"
     )
     parser.add_argument(
         "--data_dir",

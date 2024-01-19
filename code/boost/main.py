@@ -25,12 +25,12 @@ warnings.filterwarnings("ignore")
 
 def main(args):
     ######################## SELECT FEATURE
-    FEATURE = ['userID', 'assessmentItemID', 'testId', 'KnowledgeTag', 
-               'SolvingTime', 
-               'CumulativeTime', 'problems_cumulative', 'problems_last7days', 'problems_last30days', 'Month', 'DayOfWeek', 'TimeOfDay', 
-               'categorize_solvingTime', 
-               'categorize_CorrectnessRate', 
-               'categorize_TagAccuracy'
+    FEATURE = ["userID","assessmentItemID","testId","KnowledgeTag",
+               #"SolvingTime",
+               "CumulativeTime","problems_cumulative","problems_last7days","problems_last30days","CumulativeAnswerRate","CumulativeProblemCount",
+               "Month","DayOfWeek","TimeOfDay",
+               "ProblemAnswerRate","TagAnswerRate","TestAnswerRate",
+               "categorize_solvingTime","categorize_ProblemAnswerRate","categorize_TagAnswerRate","categorize_TestAnswerRate"
     ]
 
     # Time
@@ -42,8 +42,6 @@ def main(args):
     ######################## DATA LOAD
     print("### DATA LOAD ###")
     train = pd.read_csv(args.data_dir + args.file_name, parse_dates=["Timestamp"])
-    #test = pd.read_csv(args.data_dir + args.test_file_name, parse_dates=["Timestamp"])
-    #data = Dataset(train, test)
 
     data = Dataset(train)
     data, FE_train = data.split_data()
@@ -68,7 +66,7 @@ def main(args):
         os.makedirs(args.output_dir)
     model.inference(data,save_time)
 
-    print(args.model + " " + save_time + " submission file has been made" )
+    print(args.model + "_" + save_time + " submission file has been made" )
 
 
 if __name__ == "__main__":
