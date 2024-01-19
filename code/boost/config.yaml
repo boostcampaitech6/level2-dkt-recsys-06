@@ -5,7 +5,7 @@ project: level2-boost
 entity: boostcamp6-recsys6
 method: bayes
 metric:
-  name: valid_auc_epoch
+  name: train_auc
   goal: maximize
 parameters:
   model:
