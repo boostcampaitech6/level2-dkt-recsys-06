@@ -6,4 +6,6 @@ code/**/run.log
 
 /**/*.csv
 
+*/**/*.csv
+
 /data
