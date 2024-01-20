@@ -30,20 +30,51 @@ def main(args):
     logger.info("Preparing data ...")
     preprocess = Preprocess(args)
     preprocess.load_train_data(args=args, file_name=args.file_name)
-    train_data: np.ndarray = preprocess.get_train_data()
+    data: np.ndarray = preprocess.get_train_data()
 
-    train_data, valid_data = preprocess.split_data(data=train_data)
-    wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
-    wandb.run.name = "Hyeongjin Cho " + current_time
-    wandb.run.save()
+    if args.kfolds!=0:
+        folds = preprocess.kfold(data=data, k=args.kfolds)
 
-    logger.info("Building Model ...")
-    model: torch.nn.Module = trainer.get_model(args=args).to(args.device)
+        for i, fold in enumerate(folds):
+
+            wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
+            wandb.run.name = f"Hyeongjin Cho {current_time} {i+1}th fold"
+            wandb.run.save()
+
+            print(f'Starting {i+1}th fold ...')
+            train_id, val_id = fold
+            train_data = [data[i] for i in train_id] # sliding window 적용하면 무조건 list 자료형이어야 함 ㅜ
+            valid_data = [data[i] for i in val_id]
+            print('data size:', len(train_id), len(val_id))
+
+            logger.info("Building Model ...")
+            model: torch.nn.Module = trainer.get_model(args=args).to(args.device)
+            
+            logger.info("Start Training ...")
+            args.submission_name = f"{current_time} {i+1}th fold"
+            trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model)
+        
+            wandb.finish()
+            
+
+
+    else:
+        train_data, valid_data = preprocess.split_data(data=data)
     
-    logger.info("Start Training ...")
-    trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model)
+        wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
+        wandb.run.name = "Hyeongjin Cho " + current_time
+        wandb.run.save()
 
-    wandb.finish()
+        
+        logger.info("Building Model ...")
+        model: torch.nn.Module = trainer.get_model(args=args).to(args.device)
+        
+        logger.info("Start Training ...")
+        trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model)
+
+        wandb.finish()
+
+
 
 
 if __name__ == "__main__":

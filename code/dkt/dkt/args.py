@@ -17,7 +17,7 @@ def parse_args():
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
     parser.add_argument(
-        "--file_name", default="train_data.csv", type=str, help="train file name"
+        "--file_name", default="FE_v3.1.1.csv", type=str, help="train file name"
     )
     parser.add_argument(
         "--model_dir", default="models/", type=str, help="model directory"
@@ -74,6 +74,18 @@ def parse_args():
     ### graph embedding
     parser.add_argument("--graph_embed", default='False', type=strtobool, help='use graph embedding?')
 
+    ### sliding window
+    parser.add_argument("--window", default='False', type=strtobool, help='use slidding window?')
+    parser.add_argument("--stride", default=1, type=int, help='choose stride if slide windows')
+    parser.add_argument("--shuffle", default='False', type=strtobool, help='use slidding window?')
+    parser.add_argument("--shuffle_n", default=1, type=int, help='use slidding window?')
+
+    ### kfold
+    parser.add_argument('--kfolds', default=0, type=int, help='kfold?')
+
+    ### random sampling
+    parser.add_argument('--n_choice', default=0, type=int, help='random sampling in augmentation?')
+
     ### feature engineering
     # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형
 
@@ -82,7 +94,7 @@ def parse_args():
     parser.add_argument(
         "--base_cat_feats",
         nargs="+",
-        default=["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"],
+        default=["userID", "answerCode", "assessmentItemID", "testId", "KnowledgeTag"],
         help="기본 범주형 변수"
     )
 

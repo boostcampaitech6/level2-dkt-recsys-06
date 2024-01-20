@@ -160,8 +160,9 @@ class LightGCN(torch.nn.Module):
         # out_mlp = self.fc2(out_mlp) # [num_data, 1]
 
         # out_linear = (out_src * out_dst).sum(dim=-1)
-        return (out_src * out_dst).sum(dim=-1)
+        # return (out_src * out_dst).sum(dim=-1) # item과 user의 임베딩을 같은 선 상에서 유사하게 만듦
         # return 0.5+out_mlp.squeeze(1) + 0.5*out_linear # [num_data,1] -> [num_data]
+        return out_src, out_dst # end-to-end
 
 
     def predict_link(

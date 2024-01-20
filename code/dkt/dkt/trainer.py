@@ -11,7 +11,7 @@ import pickle
 from .criterion import get_criterion
 from .dataloader import get_loaders
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, BERT
+from .model import LSTM, LSTMATTN, BERT, LastQuery
 from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .utils import get_logger, logging_conf
@@ -208,6 +208,7 @@ def get_model(args) -> nn.Module:
             "lstm": LSTM,
             "lstmattn": LSTMATTN,
             "bert": BERT,
+            "lastquery":LastQuery
         }.get(
             model_name
         )(**model_args)

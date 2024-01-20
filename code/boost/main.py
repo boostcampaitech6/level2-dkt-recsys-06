@@ -26,15 +26,22 @@ warnings.filterwarnings("ignore")
 
 def main(args):
     ######################## SELECT FEATURE
-    FEATURE = ["userID","assessmentItemID","testId","KnowledgeTag",
-               "SolvingTime",
-               "CumulativeTime","problems_cumulative","problems_last7days","problems_last30days",
-               "CumulativeAnswerRate",
-               "CumulativeProblemCount",
-               "Month","DayOfWeek","TimeOfDay",
-               "ProblemAnswerRate","TagAnswerRate","TestAnswerRate",
-               "categorize_solvingTime","categorize_ProblemAnswerRate","categorize_TagAnswerRate","categorize_TestAnswerRate"
-    ]
+    # FEATURE = ['userID', 'assessmentItemID', 'testId', 'Timestamp',
+    #    'KnowledgeTag', 'SolvingTime', 'CumulativeTime', 'Month', 'DayOfWeek',
+    #    'TimeOfDay', 'problems_cumulative', 'problems_last7days',
+    #    'problems_last30days', 'CumulativeAnswerRate', 'CumulativeProblemCount',
+    #    'ProblemAnswerRate', 'TagAnswerRate', 'TestAnswerRate',
+    #    'categorize_solvingTime', 'categorize_ProblemAnswerRate',
+    #    'categorize_TagAnswerRate', 'categorize_TestAnswerRate',
+    #    'CumulativeUserTagExponentialAverage', 'UserTagCount']
+
+    FEATURE = ['userID', 'assessmentItemID', 'testId',
+       'KnowledgeTag', 'SolvingTime', 'CumulativeTime', 'problems_cumulative',
+       'problems_last7days', 'problems_last30days',
+       'CumulativeProblemCount', 'Month', 'DayOfWeek', 'TimeOfDay',
+       'CorrectnessRate', 'TagAccuracy', 'UserCumulativeAnswerRate',
+       'categorize_solvingTime', 'categorize_CorrectnessRate',
+       'categorize_TagAccuracy']
 
     # Time
     now = time.localtime()

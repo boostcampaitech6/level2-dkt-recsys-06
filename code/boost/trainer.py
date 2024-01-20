@@ -24,7 +24,7 @@ def objective(trial,args, FEATURE,data):
         'objective': 'Logloss',  # 이진 분류 문제
         'custom_metric': 'AUC',  # 평가 지표로 AUC 사용
         'eval_metric': 'AUC',  # AUC를 사용하여 평가
-      
+
         'iterations': trial.suggest_int('iterations', 1000, 5000), # iterations: 트리의 개수 또는 부스팅 라운드 수
         'od_wait':trial.suggest_int('od_wait', 1000, 2000), #'od_wait': 최적화 중단 기다리는 라운드 수
         'learning_rate': trial.suggest_loguniform('learning_rate', 0.001, 0.1),  # 학습 속도'depth': trial.suggest_int('depth', 6, 10), # 'depth':각 트리의 최대 깊이를 나타냅니다. 트리의 깊이가 클수록 모델은 더 복잡한 관계를 학습
@@ -37,6 +37,7 @@ def objective(trial,args, FEATURE,data):
         }
 
         score = []
+        score_2 = []
         for i in range(args.n_window):
 
             bst = CatBoostClassifier(**params_CAT,task_type='GPU', devices='cuda',verbose=100)
@@ -54,7 +55,15 @@ def objective(trial,args, FEATURE,data):
             print('AUC: {:.4f}'.format(auc))
         
             score.append(auc)
+            score_2.append(accuracy)
+
         result = sum(score)/len(score)
+        result_acc = sum(score_2)/len(score_2)
+
+        print('each ACC:', score_2)
+        print('total AUC: {:.4f}'.format(result_acc))
+
+        print('each  AUC:', score)
         print('total AUC: {:.4f}'.format(result))
 
     # XG : classifier
@@ -160,6 +169,8 @@ def objective(trial,args, FEATURE,data):
         
             score.append(auc)
         result = sum(score)/len(score)
+
+        print('each  AUC:',score)
         print('total AUC: {:.4f}'.format(result))
 
     return result  # auc 최대화하는 방향으로
@@ -173,9 +184,9 @@ class boosting_model:
         
         if args.model == "CAT":
             # Optuna 최적화
-            pruner = optuna.pruners.MedianPruner(n_warmup_steps=10, n_startup_trials=500)
+            pruner = optuna.pruners.MedianPruner(n_warmup_steps=10, n_startup_trials=1000)
 
-            study = optuna.create_study(direction='maximize',study_name='CatBoostClassifier',sampler=optuna.samplers.TPESampler(seed=self.args.seed, multivariate=True)) #seed args에서 끌어오기
+            study = optuna.create_study(direction='maximize',study_name='CatBoostClassifier',sampler=optuna.samplers.TPESampler(seed=self.args.seed, multivariate=True), pruner=pruner) #seed args에서 끌어오기
             study.optimize(lambda trial: objective(trial,self.args,self.feature, self.data), n_trials=args.trials)
 
             # 최적 하이퍼파라미터 출력

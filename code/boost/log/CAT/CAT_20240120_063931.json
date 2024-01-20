@@ -1,0 +1,1 @@
+{"iterations": 2498, "od_wait": 1951, "learning_rate": 0.029106359131330698, "min_data_in_leaf": 11, "leaf_estimation_iterations": 13, "l2_leaf_reg": 0.6015138967314656, "border_count": 80, "random_strength": 1, "bagging_temperature": 0.4879639408647978}

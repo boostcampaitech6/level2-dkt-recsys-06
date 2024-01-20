@@ -53,6 +53,7 @@ def main(args: argparse.Namespace):
     )
     
     # {assessmentid: embedding}
+    print(graph_embedding.shape)
     embed_dict = {}
     for id, index in id2index.items():        
         if type(id) == str:
