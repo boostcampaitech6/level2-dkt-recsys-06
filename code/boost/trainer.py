@@ -20,8 +20,7 @@ def objective(trial,args, FEATURE,data):
     if args.model == "CAT":
         params_CAT = {
         'has_time' : True,        
-        'random_seed': 42,
-        'objective': 'CrossEntropy',  # 이진 분류 문제
+        'objective': 'Logloss',  # 이진 분류 문제
         'custom_metric': 'AUC',  # 평가 지표로 AUC 사용
         'eval_metric': 'AUC',  # AUC를 사용하여 평가
       
@@ -36,17 +35,29 @@ def objective(trial,args, FEATURE,data):
         'bagging_temperature': trial.suggest_float('bagging_temperature', 0.1, 0.5), # 'bagging_temperature': 부스팅 트리의 각 반복에서 샘플을 선택하는 온도 매개변수입니다. 주어진 범위 내에서 부동 소수점 값
         }
 
-        bst = CatBoostClassifier(**params_CAT,task_type='GPU', devices='cuda',verbose=100)
-        bst.fit(data["train_x"][FEATURE], data["train_y"], cat_features= FEATURE, eval_set=(data["valid_x"][FEATURE], data["valid_y"]))
+        score = []
+        for i in range(args.n_window):
 
-        # 예측
-        #y_pred_proba = bst.predict(data["valid_x"][FEATURE])
-        y_pred_proba = bst.predict_proba(data["valid_x"][FEATURE])[:, 1]
-        y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+            bst = CatBoostClassifier(**params_CAT,task_type='GPU', devices='cuda',verbose=100,random_seed=args.seed)
+            bst.fit(data[f"train_{i}_x"][FEATURE], data[f"train_{i}_y"], cat_features= args.cat_feats, eval_set=(data[f"valid_{i}_x"][FEATURE], data[f"valid_{i}_y"]))
+
+            # 예측
+            # y_pred_proba = bst.predict(data["valid_x"][FEATURE]) #회귀
+            y_pred_proba = bst.predict_proba(data[f"valid_{i}_x"][FEATURE])[:, 1] #분류
+            y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+
+            # 정확도 및 AUC 계산
+            accuracy = accuracy_score(data[f"valid_{i}_y"], y_pred_binary)
+            auc = roc_auc_score(data[f"valid_{i}_y"], y_pred_proba)
+            print('Accuracy: {:.4f}'.format(accuracy))
+            print('AUC: {:.4f}'.format(auc))
+        
+            score.append(auc) 
+        result = sum(score)/len(score)
+        print('total AUC: {:.4f}'.format(result))
 
     elif args.model == "XG":
-        param_XG = {
-        'random_state': 42,
+        params_XG = {
         'objective': 'binary:logistic',  # 이진 분류 문제
         'eval_metric': 'auc',
         'tree_method': 'gpu_hist',  # GPU 가속화를 사용하려면 'gpu_hist'로 설정
@@ -62,22 +73,36 @@ def objective(trial,args, FEATURE,data):
         'gamma': trial.suggest_loguniform('gamma', 1e-8, 1.0),
         'grow_policy': trial.suggest_categorical('grow_policy', ['depthwise', 'lossguide'])
         }
-        # 데이터셋
-        train_data = xgb.DMatrix(data["train_x"][FEATURE], label=data["train_y"])
-        valid_data = xgb.DMatrix(data["valid_x"][FEATURE], label=data["valid_y"])
 
-        # xgboost 모델 훈련
-        bst = xgb.train(param_XG, train_data, evals=[(valid_data, 'validation')], verbose_eval=100)
+        pruning_callback = optuna.integration.XGBoostPruningCallback(trial, "validation-auc")
+
+        score = []
+        for i in range(args.n_window):
+            # 데이터셋
+            train_data = xgb.DMatrix(data[f"train_{i}_x"][FEATURE], label=data[f"train_{i}_y"], enable_categorical=True)
+            valid_data = xgb.DMatrix(data[f"valid_{i}_x"][FEATURE], label=data[f"valid_{i}_y"], enable_categorical=True)
+
+            # xgboost 모델 훈련
+            bst = xgb.train(params_XG, train_data, evals=[(valid_data, 'validation')], callbacks=[pruning_callback],random_seed=args.seed)
+            
+            # 예측
+            dtest = xgb.DMatrix(data[f"valid_{i}_x"][FEATURE], enable_categorical=True)
+            y_pred_proba = bst.predict(dtest)
+            y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+
+            # 정확도 및 AUC 계산
+            accuracy = accuracy_score(data[f"valid_{i}_y"], y_pred_binary)
+            auc = roc_auc_score(data[f"valid_{i}_y"], y_pred_proba)
+            print('Accuracy: {:.4f}'.format(accuracy))
+            print('AUC: {:.4f}'.format(auc))
         
-        # 예측
-        dtest = xgb.DMatrix(data["valid_x"][FEATURE])
-        y_pred_proba = bst.predict(dtest)
-        y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+            score.append(auc)
+        result = sum(score)/len(score)
+        print('total AUC: {:.4f}'.format(result))
 
     # LGBM
     elif args.model == "LGBM":
         params_LGBM = {
-        'random_state': 42,
         'objective': 'binary', 
         'metric': 'auc',  # 평가 지표로 AUC 사용
         'boosting_type': 'gbdt',  # gbdt는 일반적인 그래디언트 부스팅 결정 
@@ -99,26 +124,31 @@ def objective(trial,args, FEATURE,data):
         'cat_smooth': trial.suggest_float('cat_smooth', 1.0, 10.0),  # 카테고리 특징을 부드럽게 하는 파라미터
         }
 
-        # 데이터셋
-        train_data = lgbm.Dataset(data["train_x"][FEATURE], label=data["train_y"])
-        valid_data = lgbm.Dataset(data["valid_x"][FEATURE], label=data["valid_y"], reference=train_data)
-    
-        # LightGBM 모델 훈련
-        bst = lgbm.train(params_LGBM,train_data, valid_sets=valid_data)
+        score = []
+        for i in range(args.n_window):
 
-        # 예측
-        y_pred_proba = bst.predict_proba(data["valid_x"][FEATURE])[:, 1]
-        #y_pred_proba = bst.predict(data["valid_x"][FEATURE])
-        y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
+            # 데이터셋
+            train_data = lgbm.Dataset(data[f"train_{i}_x"][FEATURE], label=data[f"train_{i}_y"])
+            valid_data = lgbm.Dataset(data[f"valid_{i}_x"][FEATURE], label=data[f"valid_{i}_y"], reference=train_data)
+        
+            # LightGBM 모델 훈련
+            bst = lgbm.train(params_LGBM,train_data, valid_sets=valid_data, categorical_feature=args.cat_feats,random_state=args.seed)
 
-    
-    # 정확도 및 AUC 계산
-    accuracy = accuracy_score(data["valid_y"], y_pred_binary)
-    auc = roc_auc_score(data["valid_y"], y_pred_proba)
-    print('Accuracy: {:.4f}'.format(accuracy))
-    print('AUC: {:.4f}'.format(auc))
+            # 예측
+            y_pred_proba = bst.predict(data[f"valid_{i}_x"][FEATURE])
+            y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]
 
-    return auc  # auc 최대화하는 방향으로
+            # 정확도 및 AUC 계산
+            accuracy = accuracy_score(data[f"valid_{i}_y"], y_pred_binary)
+            auc = roc_auc_score(data[f"valid_{i}_y"], y_pred_proba)
+            print('Accuracy: {:.4f}'.format(accuracy))
+            print('AUC: {:.4f}'.format(auc))
+        
+            score.append(auc)
+        result = sum(score)/len(score)
+        print('total AUC: {:.4f}'.format(result))
+
+    return result  # auc 최대화하는 방향으로
 
 
 class boosting_model:
@@ -129,28 +159,32 @@ class boosting_model:
         
         if args.model == "CAT":
             # Optuna 최적화
-            study = optuna.create_study(direction='maximize',study_name='CatBoostRegressor',sampler=optuna.samplers.TPESampler(seed=42))
+            pruner = optuna.pruners.MedianPruner(n_warmup_steps=10, n_startup_trials=500)
+
+            study = optuna.create_study(direction='maximize',study_name='CatBoostClassifier',sampler=optuna.samplers.TPESampler(seed=self.args.seed, multivariate=True)) #seed args에서 끌어오기
             study.optimize(lambda trial: objective(trial,self.args,self.feature, self.data), n_trials=args.trials)
 
             # 최적 하이퍼파라미터 출력
             print('Hyperparameters: {}'.format(study.best_params))
-            
+            self.best_params = study.best_params
+
             self.model = CatBoostClassifier(
-                **study.best_params,task_type='GPU', devices='cuda',  
-                custom_metric = 'AUC', eval_metric = 'AUC',          
+                **study.best_params, task_type='GPU', devices='cuda',  
+                custom_metric = 'AUC', eval_metric = 'AUC',
+                objective= 'Logloss'              
             )
             
         elif args.model == "XG":
             # Optuna 최적화
-            study = optuna.create_study(direction='maximize')
+            study = optuna.create_study(direction='maximize', study_name='XGBoostRegressor',sampler=optuna.samplers.TPESampler(seed=self.args.seed))
             study.optimize(lambda trial: objective(trial,self.args,self.feature, self.data), n_trials=args.trials)
 
             # 최적 하이퍼파라미터 출력
             print('Hyperparameters: {}'.format(study.best_params))
 
             self.model = xgb.XGBClassifier(
-                **study.best_params, objective= 'binary:logistic', eval_metric= 'auc',
-            )
+                 **study.best_params, objective= 'binary:logistic', eval_metric= 'auc', enable_categorical=True
+             )
 
         elif args.model == "LGBM":
             # Optuna 최적화
@@ -163,10 +197,11 @@ class boosting_model:
             self.model = lgbm.LGBMClassifier(
                **study.best_params, objective = 'binary', metric = 'auc'
             )
-
+            
+            
         else:
             raise Exception("cat,xg,lgbm 중 하나의 모델을 선택해주세요")
-        
+
 
     def training(self, data, args, FEATURE,FE_train):
         # CAT
@@ -175,17 +210,18 @@ class boosting_model:
                 self.model.fit(
                     FE_train[FEATURE],
                     FE_train["answerCode"],
-                    cat_features= FEATURE,
+                    cat_features= args.cat_feats,
                     verbose=200,
                     )
             else:
                 print("Valid Data is used while training")
-                self.model.fit(
-                    data["train_x"][self.feature],
-                    data["train_y"],
-                    eval_set=[(data["valid_x"][self.feature], data["valid_y"])],
-                    cat_features= FEATURE,
-                    verbose=200,
+                for i in range(args.n_window):
+                    self.model.fit(
+                        data[f"train_{i}_x"][FEATURE],
+                        data[f"train_{i}_y"],
+                        eval_set=(data[f"valid_{i}_x"][FEATURE], data[f"valid_{i}_y"]),
+                        cat_features= args.cat_feats,
+                        verbose=200,
                     )
             print(self.model.get_best_score())
             print(self.model.get_all_params())
@@ -201,12 +237,15 @@ class boosting_model:
                     )
             else:
                 print("Valid Data is used while training")
-                self.model.fit(
-                    data["train_x"][self.feature],
-                    data["train_y"],
-                    eval_set=[(data["valid_x"][self.feature], data["valid_y"])],
-                    verbose=200,
+                for i in range(args.n_window):
+                    self.model.fit(
+                        data[f"train_{i}_x"][FEATURE],
+                        data[f"train_{i}_y"],
+                        eval_set=[(data[f"valid_{i}_x"][FEATURE], data[f"valid_{i}_y"])],
+                        verbose=200,
                     )
+                
+
             model_type = 'xgboost'  
 
         # LGBM
@@ -215,26 +254,30 @@ class boosting_model:
                 self.model.fit(
                     FE_train[FEATURE],
                     FE_train["answerCode"],
+                    categorical_feature=args.cat_feats
                     )
             else:
                 print("Valid Data is used while training")
-                self.model.fit(
-                    data["train_x"][self.feature],
-                    data["train_y"],
-                    eval_set=[(data["valid_x"][self.feature], data["valid_y"])],
+                for i in range(args.n_window):
+                    self.model.fit(
+                        data[f"train_{i}_x"][FEATURE],
+                        data[f"train_{i}_y"],
+                        eval_set=(data[f"valid_{i}_x"][FEATURE], data[f"valid_{i}_y"]),
+                        categorical_feature=args.cat_feats
                     )
             
             model_type = 'lightgbm' 
         
-        get_feature_importance(self.model, FEATURE, model_type)
-            
-    
-            
+        get_feature_importance(self.model, FEATURE, model_type)    
+
 
     def inference(self, data,save_time):
         # submission 제출하기 위한 코드
-        test_pred = self.model.predict_proba(data["test"][self.feature])[:, 1]
-        #test_pred = self.model.predict(data["test"][self.feature])
+        if self.args.model == 'XG':
+            test_pred = self.model.predict(data["test"][self.feature])
+        else:
+            test_pred = self.model.predict_proba(data["test"][self.feature])[:, 1]
+
         data["test"]["prediction"] = test_pred
         submission = data["test"]["prediction"].reset_index(drop=True).reset_index()
         submission.rename(columns={"index": "id"}, inplace=True)
@@ -242,6 +285,14 @@ class boosting_model:
         submission.to_csv(
             os.path.join(self.args.output_dir, submission_filename), index=False
         )
+
+        # model save
+        joblib.dump(self.model, f'model/{self.args.model}_{save_time}.pkl')
+
+        # best parameter 저장
+        os.makedirs(f'log/{self.args.model}', exist_ok=True)
+        with open(f'log/{self.args.model}/{self.args.model}_{save_time}.json', 'w') as f:
+            json.dump(self.best_params, f)
 
 
 def get_feature_importance(model, feature_names, model_type):

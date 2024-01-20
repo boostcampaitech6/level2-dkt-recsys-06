@@ -25,13 +25,19 @@ warnings.filterwarnings("ignore")
 
 def main(args):
     ######################## SELECT FEATURE
-    FEATURE = ["userID","assessmentItemID","testId","KnowledgeTag",
-               #"SolvingTime",
-               "CumulativeTime","problems_cumulative","problems_last7days","problems_last30days","CumulativeAnswerRate","CumulativeProblemCount",
-               "Month","DayOfWeek","TimeOfDay",
-               "ProblemAnswerRate","TagAnswerRate","TestAnswerRate",
-               "categorize_solvingTime","categorize_ProblemAnswerRate","categorize_TagAnswerRate","categorize_TestAnswerRate"
-    ]
+    FEATURE = ['userID','assessmentItemID','testId','KnowledgeTag',
+               #'SolvingTime',
+               'CumulativeTime',
+               'Month','DayOfWeek','TimeOfDay',
+               'problems_cumulative','problems_last7days','problems_last30days', 'CumulativeProblemCount',
+               'CumulativeUserProblemAnswerRate',
+               #'ProblemAnswerRate','TagAnswerRate',
+               #'CumulativeUserTagAverageAnswerRate', 
+               'CumulativeUserTagExponentialAverage', 
+               'UserCumulativeTagCount',
+               #'TestAnswerRate',
+               'categorize_solvingTime','categorize_ProblemAnswerRate','categorize_TagAnswerRate','categorize_TestAnswerRate'
+]
 
     # Time
     now = time.localtime()
@@ -43,8 +49,8 @@ def main(args):
     print("### DATA LOAD ###")
     train = pd.read_csv(args.data_dir + args.file_name, parse_dates=["Timestamp"])
 
-    data = Dataset(train)
-    data, FE_train = data.split_data()
+    data = Dataset(train, args)
+    data, FE_train = data.split_data(args)
 
     ######################## DATA PREPROCESSING
     print("### DATA PREPROCESSING ###")
