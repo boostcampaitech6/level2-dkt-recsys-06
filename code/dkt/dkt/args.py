@@ -1,4 +1,5 @@
 import argparse
+from distutils.util import strtobool
 
 
 def parse_args():
@@ -8,7 +9,7 @@ def parse_args():
     parser.add_argument("--device", default="cpu", type=str, help="cpu or gpu")
     parser.add_argument(
         "--data_dir",
-        default="../../data/",
+        default="/data/ephemeral/home/level2-dkt-recsys-06/data/",
         type=str,
         help="data directory",
     )
@@ -16,7 +17,7 @@ def parse_args():
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
     parser.add_argument(
-        "--file_name", default="augment.csv", type=str, help="train file name"
+        "--file_name", default="FE_v5.csv", type=str, help="train file name"
     )
     parser.add_argument(
         "--model_dir", default="models/", type=str, help="model directory"
@@ -70,6 +71,31 @@ def parse_args():
         help="submission file name",
     )
 
+    ### graph embedding
+    parser.add_argument(
+        "--graph_embed", default="False", type=strtobool, help="use graph embedding?"
+    )
+
+    ### sliding window
+    parser.add_argument(
+        "--window", default="False", type=strtobool, help="use slidding window?"
+    )
+    parser.add_argument(
+        "--stride", default=1, type=int, help="choose stride if slide windows"
+    )
+    parser.add_argument(
+        "--shuffle", default="False", type=strtobool, help="use slidding window?"
+    )
+    parser.add_argument("--shuffle_n", default=1, type=int, help="use slidding window?")
+
+    ### kfold
+    parser.add_argument("--kfolds", default=0, type=int, help="kfold?")
+
+    ### random sampling
+    parser.add_argument(
+        "--n_choice", default=0, type=int, help="random sampling in augmentation?"
+    )
+
     ### feature engineering
     # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형
 
@@ -78,7 +104,7 @@ def parse_args():
     parser.add_argument(
         "--base_cat_feats",
         nargs="+",
-        default=["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"],
+        default=["userID", "answerCode", "assessmentItemID", "testId", "KnowledgeTag"],
         help="기본 범주형 변수",
     )
 
@@ -87,7 +113,16 @@ def parse_args():
     parser.add_argument("--new_cat_feats", nargs="+", default=[], help="새로운 범주형 변수")
 
     args = parser.parse_args()
-    args.new_num_feats = args.new_num_feats[0].split(' ')
+
+    if args.new_num_feats[0] == "":
+        args.new_num_feats = []
+    else:
+        args.new_num_feats = args.new_num_feats[0].split(" ")
+    if args.new_cat_feats[0] == "":
+        args.new_cat_feats = []
+    else:
+        args.new_cat_feats = args.new_cat_feats[0].split(" ")
+
     args.num_feats = args.base_num_feats + args.new_num_feats
     args.cat_feats = args.base_cat_feats + args.new_cat_feats
 

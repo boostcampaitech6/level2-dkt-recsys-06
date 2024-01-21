@@ -6,11 +6,12 @@ import torch
 from torch import nn
 from torch.nn.functional import sigmoid
 import wandb
+import pickle
 
 from .criterion import get_criterion
 from .dataloader import get_loaders
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, BERT
+from .model import LSTM, LSTMATTN, BERT, LastQuery
 from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .utils import get_logger, logging_conf
@@ -20,8 +21,14 @@ logger = get_logger(logger_conf=logging_conf)
 
 
 def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
     train_loader, valid_loader = get_loaders(
-        args=args, train=train_data, valid=valid_data
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
     )
 
     # For warmup scheduler which uses step interval
@@ -48,7 +55,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
         )
 
         # VALID
-        auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
 
         wandb.log(
             dict(
@@ -58,6 +65,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
                 train_acc_epoch=train_acc,
                 valid_auc_epoch=auc,
                 valid_acc_epoch=acc,
+                valid_loss_epoch=loss,
             )
         )
 
@@ -134,10 +142,15 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
     total_preds = []
     total_targets = []
+    losses = []
+
     for step, batch in enumerate(valid_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
         preds = model(batch)
         targets = batch["correct"]
+
+        loss = compute_loss(preds=preds, targets=targets)
+        losses.append(loss)
 
         # predictions
         preds = sigmoid(preds[:, -1])
@@ -146,13 +159,14 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
 
+    losses_avg = sum(losses) / len(losses)
     total_preds = torch.concat(total_preds).cpu().numpy()
     total_targets = torch.concat(total_targets).cpu().numpy()
 
     # Train AUC / ACC
     auc, acc = get_metric(targets=total_targets, preds=total_preds)
     logger.info("VALID AUC : %.4f ACC : %.4f", auc, acc)
-    return auc, acc
+    return auc, acc, losses_avg
 
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
@@ -162,7 +176,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
     total_preds = []
     for step, batch in enumerate(test_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
 
         # predictions
         preds = sigmoid(preds[:, -1])
@@ -196,9 +210,8 @@ def get_model(args) -> nn.Module:
             "lstm": LSTM,
             "lstmattn": LSTMATTN,
             "bert": BERT,
-        }.get(
-            model_name
-        )(**model_args)
+            "lastquery": LastQuery,
+        }.get(model_name)(**model_args)
     except KeyError:
         logger.warn("No model name %s found", model_name)
     except Exception as e:

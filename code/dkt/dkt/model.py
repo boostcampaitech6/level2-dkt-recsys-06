@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, BertModel
+import pickle
+import numpy as np
 
 
 # 범주형 -> embedding -> linear
@@ -42,7 +44,13 @@ class ModelBase(nn.Module):
                 )
 
         # Concatentaed Embedding Linear Projection
-        self.comb_proj = nn.Linear(intd * (len(args.cat_feats) - 1), dim_cat)
+        if self.args.graph_embed:
+            self.comb_proj_dim = intd * (len(self.args.cat_feats) - 2) + 64  # graph
+        else:
+            self.comb_proj_dim = intd * (len(self.args.cat_feats) - 1)  # new
+
+        print(self.comb_proj_dim, dim_cat)
+        self.comb_proj = nn.Linear(self.comb_proj_dim, dim_cat)
         self.layer_norm_cat = nn.LayerNorm(dim_cat)
 
         ## NUMERICALS
@@ -70,7 +78,8 @@ class ModelBase(nn.Module):
         )
 
         batch_size = interaction.size(0)
-        # Embedding
+
+        ## 1) 범주형변수 Embedding
         embed_interaction = self.embedding_interaction(interaction)
         embed_test = self.embedding_test(test)
         embed_question = self.embedding_question(question)
@@ -80,7 +89,6 @@ class ModelBase(nn.Module):
             [
                 embed_interaction,
                 embed_test,
-                embed_question,
                 embed_tag,
             ],
             dim=2,
@@ -93,10 +101,17 @@ class ModelBase(nn.Module):
                 temp = new_embedding(cat_feat.int())
                 embed = torch.cat([embed, temp], dim=2)
 
+        # graph embedding
+        if self.args.graph_embed:
+            embed_graph = data["embed_graph"]
+            embed = torch.cat([embed, embed_graph], dim=2)
+        else:  # just embedding
+            embed = torch.cat([embed, embed_question], dim=2)
+
         X = self.comb_proj(embed)  # embedding linear projection
         X = self.layer_norm_cat(X)
 
-        # 수치형 변수
+        ## 2) 수치형 변수
         if len(self.args.num_feats) > 1:
             num_feat = data["num_feats_0"].reshape(batch_size, -1, 1)
             for i in range(1, len(self.args.num_feats)):
@@ -204,6 +219,7 @@ class LSTMATTN(ModelBase):
 class BERT(ModelBase):
     def __init__(
         self,
+        args,
         hidden_dim: int = 64,
         n_layers: int = 2,
         n_tests: int = 1538,
@@ -214,7 +230,7 @@ class BERT(ModelBase):
         max_seq_len: float = 20,
         **kwargs,
     ):
-        super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
+        super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
         self.n_heads = n_heads
         self.drop_out = drop_out
         # Bert config
@@ -227,18 +243,202 @@ class BERT(ModelBase):
         )
         self.encoder = BertModel(self.config)
 
-    def forward(self, test, question, tag, correct, mask, interaction):
-        X, batch_size = super().forward(
-            test=test,
-            question=question,
-            tag=tag,
-            correct=correct,
-            mask=mask,
-            interaction=interaction,
-        )
+    def forward(self, data):  # , test, question, tag, correct, mask, interaction):
+        X, batch_size = super().forward(data=data)
 
-        encoded_layers = self.encoder(inputs_embeds=X, attention_mask=mask)
+        # X, batch_size = super().forward(
+        #     test=test,
+        #     question=question,
+        #     tag=tag,
+        #     correct=correct,
+        #     mask=mask,
+        #     interaction=interaction,
+        # )
+
+        encoded_layers = self.encoder(inputs_embeds=X, attention_mask=data["mask"])
         out = encoded_layers[0]
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
         out = self.fc(out).view(batch_size, -1)
         return out
+
+
+class Feed_Forward_block(nn.Module):
+    """
+    out =  Relu( M_out*w1 + b1) *w2 + b2
+    """
+
+    def __init__(self, dim_ff):
+        super().__init__()
+        self.layer1 = nn.Linear(in_features=dim_ff, out_features=dim_ff)
+        self.layer2 = nn.Linear(in_features=dim_ff, out_features=dim_ff)
+
+    def forward(self, ffn_in):
+        x = self.layer1(ffn_in)
+        x = nn.ReLU()(x)
+        x = self.layer2(x)
+        return x
+
+
+class LastQuery(ModelBase):
+    def __init__(
+        self,
+        args,
+        hidden_dim: int = 64,
+        n_layers: int = 2,
+        n_tests: int = 1538,
+        n_questions: int = 9455,
+        n_tags: int = 913,
+        **kwargs,
+    ):
+        super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
+        self.args = args
+        self.device = self.args.device
+
+        if self.args.num_feats:
+            self.hidden_dim = 2 * self.args.hidden_dim
+        else:
+            self.hidden_dim = self.args.hidden_dim
+
+        # Embedding
+        # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
+        # self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
+        # self.embedding_test = nn.Embedding(self.args.n_tests + 1, self.hidden_dim//3)
+        # self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
+        # self.embedding_tag = nn.Embedding(self.args.n_tags + 1, self.hidden_dim//3)
+        # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
+
+        # embedding combination projection
+        # self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
+
+        # 기존 keetar님 솔루션에서는 Positional Embedding은 사용되지 않습니다
+        # 하지만 사용 여부는 자유롭게 결정해주세요 :)
+        # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
+
+        # Encoder
+        self.query = nn.Linear(
+            in_features=self.hidden_dim, out_features=self.hidden_dim
+        )
+        self.key = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
+        self.value = nn.Linear(
+            in_features=self.hidden_dim, out_features=self.hidden_dim
+        )
+
+        self.attn = nn.MultiheadAttention(
+            embed_dim=self.hidden_dim, num_heads=self.args.n_heads
+        )
+        self.mask = None  # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
+        self.ffn = Feed_Forward_block(self.hidden_dim)
+
+        self.ln1 = nn.LayerNorm(self.hidden_dim)
+        self.ln2 = nn.LayerNorm(self.hidden_dim)
+
+        # LSTM
+        self.lstm = nn.LSTM(
+            self.hidden_dim, self.hidden_dim, self.args.n_layers, batch_first=True
+        )
+
+        # Fully connected layer
+        self.fc = nn.Linear(self.hidden_dim, 1)
+
+        self.activation = nn.Sigmoid()
+
+    def get_mask(self, seq_len, index, batch_size):
+        """
+        batchsize * n_head 수만큼 각 mask를 반복하여 증가시킨다
+
+        참고로 (batch_size*self.args.n_heads, seq_len, seq_len) 가 아니라
+              (batch_size*self.args.n_heads,       1, seq_len) 로 하는 이유는
+
+        last query라 output의 seq부분의 사이즈가 1이기 때문이다
+        """
+        # [[1], -> [1, 2, 3]
+        #  [2],
+        #  [3]]
+        index = index.view(-1)
+
+        # last query의 index에 해당하는 upper triangular mask의 row를 사용한다
+        mask = torch.from_numpy(np.triu(np.ones((seq_len, seq_len)), k=1))
+        mask = mask[index]
+
+        # batchsize * n_head 수만큼 각 mask를 반복하여 증가시킨다
+        mask = mask.repeat(1, self.args.n_heads).view(
+            batch_size * self.args.n_heads, -1, seq_len
+        )
+        return mask.masked_fill(mask == 1, float("-inf"))
+
+    def get_pos(self, seq_len):
+        # use sine positional embeddinds
+        return torch.arange(seq_len).unsqueeze(0)
+
+    def init_hidden(self, batch_size):
+        h = torch.zeros(self.args.n_layers, batch_size, self.hidden_dim)
+        h = h.to(self.device)
+
+        c = torch.zeros(self.args.n_layers, batch_size, self.hidden_dim)
+        c = c.to(self.device)
+
+        return (h, c)
+
+    def forward(self, data):
+        # test, question, tag, _, mask, interaction, index = input
+        batch_size = data["interaction"].size(0)
+        seq_len = data["interaction"].size(1)
+
+        embed, batch_size = super().forward(data=data)
+        # 신나는 embedding
+        # embed_interaction = self.embedding_interaction(interaction)
+        # embed_test = self.embedding_test(test)
+        # embed_question = self.embedding_question(question)
+        # embed_tag = self.embedding_tag(tag)
+
+        # embed = torch.cat([embed_interaction,
+        #                    embed_test,
+        #                    embed_question,
+        #                    embed_tag,], 2)
+
+        # embed = self.comb_proj(embed)
+
+        # Positional Embedding
+        # last query에서는 positional embedding을 하지 않음
+        # position = self.get_pos(seq_len).to('cuda')
+        # embed_pos = self.embedding_position(position)
+        # embed = embed + embed_pos
+
+        ####################### ENCODER #####################
+        q = self.query(embed)[:, -1:, :]
+
+        # 이 3D gathering은 머리가 아픕니다. 잠시 머리를 식히고 옵니다.
+        # q = torch.gather(q, 1, index.repeat(1, self.hidden_dim).unsqueeze(1)) # 마지막 쿼리 빼고 다 가리기
+        q = q.permute(1, 0, 2)
+
+        k = self.key(embed).permute(1, 0, 2)
+        v = self.value(embed).permute(1, 0, 2)
+
+        ## attention
+        # last query only
+        # self.mask = self.get_mask(seq_len, index, batch_size).to(self.device)
+        out, _ = self.attn(q, k, v, attn_mask=self.mask)
+
+        ## residual + layer norm
+        out = out.permute(1, 0, 2)
+        out = embed + out
+        out = self.ln1(out)
+
+        ## feed forward network
+        out = self.ffn(out)
+
+        ## residual + layer norm
+        out = embed + out
+        out = self.ln2(out)
+
+        ###################### LSTM #####################
+        hidden = self.init_hidden(batch_size)
+        out, hidden = self.lstm(out, hidden)
+
+        ###################### DNN #####################
+        out = out.contiguous().view(batch_size, -1, self.hidden_dim)
+        out = self.fc(out)
+
+        preds = self.activation(out).view(batch_size, -1)
+
+        return preds
