@@ -59,7 +59,7 @@ class Preprocess:
 
         augmented_datas = []
         for row in data: # user마다
-            seq_len = len(row[0])
+            seq_len = len(row[0]) # row:[n_feats, seq_len]
 
             user_augmented = []
             # 만약 window 크기보다 seq len이 같거나 작으면 augmentation을 하지 않는다
@@ -72,9 +72,12 @@ class Preprocess:
                 for window_i in range(total_window):
                     # window로 잘린 데이터를 모으는 리스트
                     window_data = []
-                    for col in row:
+                    for col in row: # col:[seq_len]
                         # window_data.append(col[window_i*stride:window_i*stride + window_size]) # 앞에서부터
-                        window_data.append(col[-1*window_i*stride -window_size:-1*window_i*stride]) # 뒤에서부터
+                        if window_i == 0:
+                            window_data.append(col[-1*window_i*stride -window_size:]) # 뒤에서부터
+                        else:
+                            window_data.append(col[-1*window_i*stride -window_size:-1*window_i*stride]) # 뒤에서부터
 
                     # Shuffle
                     # 마지막 데이터의 경우 shuffle을 하지 않는다
@@ -82,7 +85,7 @@ class Preprocess:
                         shuffle_datas = self.__shuffle(window_data, window_size, args)
                         user_augmented += shuffle_datas
                     else:
-                        user_augmented.append(tuple(window_data))
+                        user_augmented.append(window_data)
 
                 # slidding window에서 뒷부분이 누락될 경우 추가
                 total_len = window_size + (stride * (total_window - 1))
@@ -90,22 +93,38 @@ class Preprocess:
                     window_data = []
                     for col in row:
                         window_data.append(col[-window_size:])
-                    user_augmented.append(tuple(window_data))
+                    user_augmented.append(window_data)
                 
                 # slidding window에서 앞부분이 누락될 경우 추가
-                total_len = window_size + (stride * (total_window - 1))
-                if seq_len != total_len:
-                    window_data = []
-                    for col in row:
-                        window_data.append(col[:window_size])
-                    user_augmented.append(tuple(window_data))
+                # total_len = window_size + (stride * (total_window - 1))
+                # if seq_len != total_len:
+                #     window_data = []
+                #     for col in row:
+                #         window_data.append(col[:window_size])
+                #     user_augmented.append(tuple(window_data)) #tuple을 list로 바꿈 오류 예상ㅇ # [window_num, n_feats, window_size]
+
+                
+                # split할 때 유저별로 fold될 수 있도록 labeling이나 순서 정해주자
+                    # => 이거 기준으로 k-fold : 이렇게 되면, 기존=유저당 1개 seq 마지막 loss 학습 / 이후=유저당 (k-1)*fold개 sequence 마지막 loss 학습
 
                 # user 별로 random choice
                 if self.args.n_choice != 0:
-                    size = min(self.args.n_choice, len(user_augmented))
-                    # np.random.seed()
-                    idx = np.random.choice(np.arange(len(user_augmented)), size=size, replace=False)
-                    augmented_datas += [user_augmented[i] for i in idx]
+                    # n_choice 보다 많으면 -> random choice
+                    if self.args.n_choice <= len(user_augmented):
+                        idx = np.random.choice(np.arange(len(user_augmented)), size=self.args.n_choice, replace=False)
+                        augmented_datas += [user_augmented[i] for i in idx]
+                    # n_choice 보다 적으면 -> 최신 window부터 shuffle로 데이터 추가
+                    else:
+                        print(user_augmented)
+                        shuffle_size = self.args.n_choice - len(user_augmented)
+                        for i in range(shuffle_size):
+                            temp = user_augmented[i] #temp: [n_feats, window_size]
+                            for col in temp: # col:[seq_len]
+                                print(col)
+                                random.shuffle(col)
+                            user_augmented.append(temp)
+                        augmented_datas += user_augmented
+
                 else:
                     augmented_datas += list(user_augmented)
 
@@ -224,7 +243,7 @@ class Preprocess:
         ).values
 
         if self.args.window:
-            group = self.__data_augmentation(group, self.args)
+            group = self.__data_augmentation(group, self.args) # [n_users, n_feats, seq_len]
 
         return group #shape: [n_users, n_feats, origianl_seq]
 

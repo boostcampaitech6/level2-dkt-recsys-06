@@ -38,6 +38,7 @@ class Dataset:
         data = self.restruct_data()
         FE_train= type_conversion(data['train'], self.args)
 
+        data['train'] = data['train'].sort_values(by=['userID','Timestamp'])
         train = data['train'].copy()
         # window 수 만큼 iteration
         for i in range(self.args.n_window):            
