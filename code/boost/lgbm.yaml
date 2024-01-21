@@ -1,0 +1,36 @@
+project: lightgbm-sweep
+method: bayes  # 하이퍼파라미터 탐색 방법
+metric:         # 최적화할 메트릭
+  name: auc
+  goal: maximize
+parameters:     # 탐색할 하이퍼파라미터
+  num_leaves:
+    min: 20
+    max: 40
+  learning_rate: 
+    min: 0.0001
+    max: 0.9
+  max_depth:
+    min: -1   # -1은 깊이 제한 없음을 의미합니다.
+    max: 15
+  min_data_in_leaf:
+    min: 20
+    max: 100
+  feature_fraction:
+    min: 0.6
+    max: 1.0
+  bagging_fraction:
+    min: 0.6
+    max: 1.0
+  bagging_freq:
+    min: 0
+    max: 10
+  lambda_l1:
+    min: 0.0
+    max: 10.0
+  lambda_l2:
+    min: 0.0
+    max: 10.0
+  cat_smooth:
+    min: 10
+    max: 100
