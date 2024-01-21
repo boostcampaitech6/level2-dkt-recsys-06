@@ -47,6 +47,31 @@ class Preprocess:
         kfold = KFold(n_splits=k, shuffle=True, random_state=self.args.seed)
         folds = kfold.split(data)
         return folds
+
+    def manual_kfold(
+            self, data:np.ndarray, k:int=5, shuffle:bool=True
+    ):
+        # 유저별로 각 fold에 나누기
+        folds = {}
+        for i in range(1,k+1):
+            folds[f'fold_{i}'] = []
+        for i in range(len(data)):
+            folds[f'fold_{i%k+1}'].append(data[i])
+
+        # cross validation
+        fold_iters = []
+        for i in range(1,k+1):
+            train = []
+            val = []
+            for j in range(1,k+1):
+                if i==j:
+                    val.extend(folds[f'fold_{j}'])
+                else:
+                    train.extend(folds[f'fold_{j}'])
+            fold_iters.append([train, val])
+
+        return fold_iters
+            
     
     def __slidding_window(self, data, args):
 
@@ -126,7 +151,7 @@ class Preprocess:
                 else:
                     augmented_datas += list(user_augmented)
 
-        return augmented_datas #[n_augmented_data, n_feats, window_size]
+        return augmented_datas #[n_user*n_choice, n_feats, window_size]
 
     def __shuffle(self, data, data_size, args):
         shuffle_datas = []
@@ -241,9 +266,9 @@ class Preprocess:
         ).values
 
         if self.args.window:
-            group = self.__data_augmentation(group, self.args) # [n_users, n_feats, seq_len]
+            group = self.__data_augmentation(group, self.args) # [n_users, n_feats, seq_len] -> [n_users, n_feats, seq_len]
 
-        return group #shape: [n_users, n_feats, origianl_seq]
+        return group #shape: [n_users*n_choice, n_feats, origianl_seq]
 
     def load_train_data(self, args, file_name: str) -> None:
         self.train_data = self.load_data_from_file(args, file_name)

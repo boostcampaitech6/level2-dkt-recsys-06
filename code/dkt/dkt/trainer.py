@@ -180,7 +180,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
         preds = sigmoid(preds[:, -1])
         preds = preds.cpu().detach().numpy()
         total_preds += list(preds)
-
+        
     write_path = os.path.join(args.output_dir, args.submission_name)
     os.makedirs(name=args.output_dir, exist_ok=True)
     with open(write_path, "w", encoding="utf8") as w:
