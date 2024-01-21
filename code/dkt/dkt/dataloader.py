@@ -115,12 +115,10 @@ class Preprocess:
                         augmented_datas += [user_augmented[i] for i in idx]
                     # n_choice 보다 적으면 -> 최신 window부터 shuffle로 데이터 추가
                     else:
-                        print(user_augmented)
                         shuffle_size = self.args.n_choice - len(user_augmented)
                         for i in range(shuffle_size):
                             temp = user_augmented[i] #temp: [n_feats, window_size]
                             for col in temp: # col:[seq_len]
-                                print(col)
                                 random.shuffle(col)
                             user_augmented.append(temp)
                         augmented_datas += user_augmented
