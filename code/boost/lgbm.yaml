@@ -5,11 +5,11 @@ metric:         # 최적화할 메트릭
   goal: maximize
 parameters:     # 탐색할 하이퍼파라미터
   num_leaves:
-    min: 20
+    min: 10
     max: 40
   learning_rate: 
     min: 0.0001
-    max: 0.9
+    max: 0.6
   max_depth:
     min: -1   # -1은 깊이 제한 없음을 의미합니다.
     max: 15
