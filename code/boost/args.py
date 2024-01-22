@@ -7,17 +7,17 @@ def parse_args():
     ### 중요 ###
     parser.add_argument("--model", default="CAT", type=str, help="model type")
     parser.add_argument('--fe', default="Y") # train시 valid set 쓸건지 안쓸건지 안 쓸꺼면 --fe N
-    parser.add_argument('--trials', type=int, default=1) #랜덤 조합으로 몇번
+    parser.add_argument('--trials', type=int, default=50) #랜덤 조합으로 몇번
     
 
     ## EDA 바뀔시 ##
     parser.add_argument(
-        "--file_name", default="FE_v5.csv", type=str, help="train file name"
+        "--file_name", default="FE_v6.csv", type=str, help="train file name"
     )
     parser.add_argument("--cat_feats", default=['userID','testId','KnowledgeTag',
                                                 'Month','DayOfWeek','TimeOfDay',
-                                                'categorize_solvingTime','categorize_ProblemAnswerRate','categorize_TagAnswerRate','categorize_TestAnswerRate'
-
+                                                'categorize_solvingTime','categorize_ProblemAnswerRate','categorize_TagAnswerRate','categorize_TestAnswerRate',
+                                                'categorize_CumulativeUserProblemAnswerRate', 'categorize_CumulativeUserTagExponentialAverage'
     ], nargs="+", help='categorical_feature option')
 
 

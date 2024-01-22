@@ -36,7 +36,9 @@ class Dataset:
         FE_train= type_conversion(data["train"],args)
 
         train = data['train'].copy()
-        # window 수 만큼 iteration
+        test_users = data['test']['userID'].unique()
+        
+       # window 수 만큼 iteration
         for i in range(self.args.n_window):
             # 'train' DataFrame을 'userID' 및 'testId'로 그룹화하고 각 그룹 내에서 'Timestamp'의 최댓값의 인덱스를 찾습니다
             last_solved_indices = train.groupby(['userID', 'testId'])['Timestamp'].idxmax()
@@ -84,7 +86,6 @@ class Preprocess:
             self.data[f"valid_{i}_y"] = self.data[f"valid_{i}"]["answerCode"]
 
         self.data["test"] = self.data["test"].drop("answerCode", axis=1)
-
         # as category: integer여도 범주형으로 취급 가능
         for i in range(self.args.n_window):
             for state in [f"train_{i}_x", f"valid_{i}_x", "test"]:
@@ -93,15 +94,21 @@ class Preprocess:
                 for feature in self.args.cat_feats:
                     df[feature] = df[feature].astype('category')
 
+        for feature in df.columns:
+            le = preprocessing.LabelEncoder()
+            le.fit(self.data['train'][feature])
 
-        # 카테고리형 feature -> 정수
-        #for state in ["train_x", "valid_x", "test"]:
-            #df = self.data[state]
-            #le = preprocessing.LabelEncoder()
-            #for feature in df.columns:
-                #if df[feature].dtypes == "object" or df[feature].dtypes == "UInt32":
-                    #df[feature] = le.fit_transform(df[feature])
-            #self.data[state] = df
+            for i in range(self.args.n_window):
+                for state in [f"train_{i}_x", f"valid_{i}_x"]:
+                    df = self.data[state]
+                    if df[feature].dtypes == "object":
+                        print(f'encoded {feature}')
+                        df[feature] = le.transform(df[feature])
+                    self.data[state] = df
+            if self.data['test'][feature].dtypes == "object":
+                self.data['test'][feature] = le.transform(self.data['test'][feature])
+
+
         return self.data
     
 

@@ -29,15 +29,16 @@ def main(args):
                #'SolvingTime',
                'CumulativeTime',
                'Month','DayOfWeek','TimeOfDay',
-               'problems_cumulative','problems_last7days','problems_last30days', 'CumulativeProblemCount',
-               'CumulativeUserProblemAnswerRate',
+               'problems_last7days','problems_last30days', 'CumulativeProblemCount',
+               #'CumulativeUserProblemAnswerRate',
                #'ProblemAnswerRate','TagAnswerRate',
                #'CumulativeUserTagAverageAnswerRate', 
-               'CumulativeUserTagExponentialAverage', 
-               'UserCumulativeTagCount',
+               #'CumulativeUserTagExponentialAverage', 
+               'UserCumulativeTagCount','UserRecentTagAnswer',
                #'TestAnswerRate',
-               'categorize_solvingTime','categorize_ProblemAnswerRate','categorize_TagAnswerRate','categorize_TestAnswerRate'
-]
+               'categorize_solvingTime','categorize_ProblemAnswerRate','categorize_TagAnswerRate','categorize_TestAnswerRate',
+                'categorize_CumulativeUserProblemAnswerRate', 'categorize_CumulativeUserTagExponentialAverage'
+    ]
 
     # Time
     now = time.localtime()
