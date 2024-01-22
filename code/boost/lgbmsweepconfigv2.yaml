@@ -1,8 +1,10 @@
 project: lightgbm-sweep
 method: bayes
+
 metric:
   name: auc
   goal: maximize
+
 parameters:
   num_leaves:
     min: 10  # 미세 조정하지 않음
