@@ -448,7 +448,7 @@ class LastQuery(ModelBase):
     
 
 
-class LastQuery_layers(ModelBase):
+class LastQuery2(ModelBase):
     def __init__(self,
                  args,
                 hidden_dim: int = 64,
