@@ -1,36 +1,75 @@
+''' v1.0
+project: lightgbm-sweep           # W&B 프로젝트 이름
+method: bayes                     # 하이퍼파라미터 탐색 방법 (여기서는 베이지안 최적화 사용)
+
+# 최적화할 메트릭 설정
+metric:
+  name: auc                       # AUC (Area Under Curve)를 최적화 대상 메트릭으로 사용
+  goal: maximize                  # AUC를 최대화하는 것이 목표
+
+# 탐색할 하이퍼파라미터 설정
+parameters:
+  num_leaves:
+    min: 10                       # 트리의 최대 잎의 수 최소값
+    max: 40                       # 트리의 최대 잎의 수 최대값
+  learning_rate:
+    min: 0.0001                   # 학습률 최소값
+    max: 0.6                      # 학습률 최대값
+  max_depth:
+    min: -1                       # 트리의 최대 깊이, -1은 깊이 제한 없음을 의미
+    max: 15                       # 트리의 최대 깊이 최대값
+  min_data_in_leaf:
+    min: 20                       # 하나의 잎에 있어야 할 최소 데이터 수 최소값
+    max: 100                      # 하나의 잎에 있어야 할 최소 데이터 수 최대값
+  feature_fraction:
+    min: 0.6                      # 학습에 사용할 feature의 비율 최소값
+    max: 1.0                      # 학습에 사용할 feature의 비율 최대값
+  bagging_fraction:
+    min: 0.6                      # 배깅을 사용할 데이터의 비율 최소값
+    max: 1.0                      # 배깅을 사용할 데이터의 비율 최대값
+  bagging_freq:
+    min: 0                        # 배깅의 빈도 최소값, 0은 배깅을 사용하지 않음을 의미
+    max: 10                       # 배깅의 빈도 최대값
+  lambda_l1:
+    min: 0.0                      # L1 정규화 파라미터 최소값
+    max: 10.0                     # L1 정규화 파라미터 최대값
+  lambda_l2:
+    min: 0.0                      # L2 정규화 파라미터 최소값
+    max: 10.0                     # L2 정규화 파라미터 최대값
+  cat_smooth:
+    min: 10                       # 범주형 feature를 위한 스무딩 파라미터 최소값
+    max: 100                      # 범주형 feature를 위한 스무딩 파라미터 최대값
+'''
 project: lightgbm-sweep
-method: bayes  # 하이퍼파라미터 탐색 방법
-metric:         # 최적화할 메트릭
+method: bayes
+metric:
   name: auc
   goal: maximize
-parameters:     # 탐색할 하이퍼파라미터
+parameters:
   num_leaves:
-    min: 10
-    max: 40
-  learning_rate: 
-    min: 0.0001
-    max: 0.6
+    min: 10  # 미세 조정하지 않음
+    max: 50  # 긍정적 상관관계가 있으므로 범위를 약간 늘림
+  learning_rate:
+    min: 0.0001  # 미세 조정하지 않음
+    max: 0.7     # 긍정적 상관관계가 있으므로 범위를 약간 늘림
   max_depth:
-    min: -1   # -1은 깊이 제한 없음을 의미합니다.
-    max: 15
+    min: -1   # 미세 조정하지 않음
+    max: 25   # 높은 중요도와 긍정적 상관관계가 있으므로 범위를 늘림
   min_data_in_leaf:
-    min: 20
-    max: 100
+    min: 20   # 미세 조정하지 않음
+    max: 120  # 약간 늘릴 수 있음
   feature_fraction:
-    min: 0.6
-    max: 1.0
+    min: 0.5  # 중요도와 상관관계가 낮으므로 미세 조정
+    max: 1.0  # 미세 조정하지 않음
   bagging_fraction:
-    min: 0.6
-    max: 1.0
+    min: 0.5  # 중요도가 낮으므로 미세 조정
+    max: 1.0  # 미세 조정하지 않음
   bagging_freq:
-    min: 0
-    max: 10
+    min: 0    # 미세 조정하지 않음
+    max: 15   # 높은 중요도와 긍정적 상관관계가 있으므로 범위를 늘림
   lambda_l1:
-    min: 0.0
-    max: 10.0
+    min: 0.0  # 미세 조정하지 않음
+    max: 15.0 # 중요도가 높으므로 범위를 약간 늘림
   lambda_l2:
-    min: 0.0
-    max: 10.0
-  cat_smooth:
-    min: 10
-    max: 100
+    min: 0.0  # 미세 조정하지 않음
+    max: 15.0 # 중요도가 높으므로 범위를
