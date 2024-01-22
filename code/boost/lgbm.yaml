@@ -1,4 +1,3 @@
-''' v1.0
 project: lightgbm-sweep           # W&B 프로젝트 이름
 method: bayes                     # 하이퍼파라미터 탐색 방법 (여기서는 베이지안 최적화 사용)
 
@@ -39,37 +38,3 @@ parameters:
   cat_smooth:
     min: 10                       # 범주형 feature를 위한 스무딩 파라미터 최소값
     max: 100                      # 범주형 feature를 위한 스무딩 파라미터 최대값
-'''
-project: lightgbm-sweep
-method: bayes
-metric:
-  name: auc
-  goal: maximize
-parameters:
-  num_leaves:
-    min: 10  # 미세 조정하지 않음
-    max: 50  # 긍정적 상관관계가 있으므로 범위를 약간 늘림
-  learning_rate:
-    min: 0.0001  # 미세 조정하지 않음
-    max: 0.7     # 긍정적 상관관계가 있으므로 범위를 약간 늘림
-  max_depth:
-    min: -1   # 미세 조정하지 않음
-    max: 25   # 높은 중요도와 긍정적 상관관계가 있으므로 범위를 늘림
-  min_data_in_leaf:
-    min: 20   # 미세 조정하지 않음
-    max: 120  # 약간 늘릴 수 있음
-  feature_fraction:
-    min: 0.5  # 중요도와 상관관계가 낮으므로 미세 조정
-    max: 1.0  # 미세 조정하지 않음
-  bagging_fraction:
-    min: 0.5  # 중요도가 낮으므로 미세 조정
-    max: 1.0  # 미세 조정하지 않음
-  bagging_freq:
-    min: 0    # 미세 조정하지 않음
-    max: 15   # 높은 중요도와 긍정적 상관관계가 있으므로 범위를 늘림
-  lambda_l1:
-    min: 0.0  # 미세 조정하지 않음
-    max: 15.0 # 중요도가 높으므로 범위를 약간 늘림
-  lambda_l2:
-    min: 0.0  # 미세 조정하지 않음
-    max: 15.0 # 중요도가 높으므로 범위를
