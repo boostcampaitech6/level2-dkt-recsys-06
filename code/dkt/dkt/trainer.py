@@ -11,7 +11,7 @@ import pickle
 from .criterion import get_criterion
 from .dataloader import get_loaders
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, BERT, LastQuery
+from .model import LSTM, LSTMATTN, BERT, LastQuery, LastQuery2
 from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .utils import get_logger, logging_conf
@@ -39,6 +39,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
     scheduler = get_scheduler(optimizer=optimizer, args=args)
 
     best_auc = -1
+    best_val_loss = 1e9
     early_stopping_counter = 0
     for epoch in range(args.n_epochs):
         logger.info("Start Training: Epoch %s", epoch + 1)
@@ -67,8 +68,28 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
             )
         )
 
-        if auc > best_auc:
-            best_auc = auc
+        # if auc > best_auc:
+        #     best_auc = auc
+        #     # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+        #     model_to_save = model.module if hasattr(model, "module") else model
+        #     save_checkpoint(
+        #         state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
+        #         model_dir=args.model_dir,
+        #         model_filename="best_model.pt",
+        #     )
+        #     early_stopping_counter = 0
+        # else:
+        #     early_stopping_counter += 1
+        #     if early_stopping_counter >= args.patience:
+        #         logger.info(
+        #             "EarlyStopping counter: %s out of %s",
+        #             early_stopping_counter,
+        #             args.patience,
+        #         )
+        #         break
+        
+        if loss < best_val_loss:
+            best_val_loss = loss
             # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, "module") else model
             save_checkpoint(
@@ -180,7 +201,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
         preds = sigmoid(preds[:, -1])
         preds = preds.cpu().detach().numpy()
         total_preds += list(preds)
-        
+
     write_path = os.path.join(args.output_dir, args.submission_name)
     os.makedirs(name=args.output_dir, exist_ok=True)
     with open(write_path, "w", encoding="utf8") as w:
@@ -208,7 +229,8 @@ def get_model(args) -> nn.Module:
             "lstm": LSTM,
             "lstmattn": LSTMATTN,
             "bert": BERT,
-            "lastquery":LastQuery
+            "lastquery":LastQuery,
+            'lasyquery':LastQuery2
         }.get(
             model_name
         )(**model_args)

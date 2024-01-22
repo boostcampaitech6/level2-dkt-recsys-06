@@ -75,7 +75,7 @@ def parse_args():
     parser.add_argument("--graph_embed", default='False', type=strtobool, help='use graph embedding?')
 
     ### sliding window
-    parser.add_argument("--window", default='False', type=strtobool, help='use slidding window?')
+    parser.add_argument("--window", default='True', type=strtobool, help='use slidding window?')
     parser.add_argument("--stride", default=1, type=int, help='choose stride if slide windows')
     parser.add_argument("--shuffle", default='False', type=strtobool, help='use slidding window?')
     parser.add_argument("--shuffle_n", default=1, type=int, help='use slidding window?')
