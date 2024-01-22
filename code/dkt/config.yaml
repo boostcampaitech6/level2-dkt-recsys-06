@@ -5,7 +5,7 @@ project: level2-lastquery
 entity: boostcamp6-recsys6
 method: bayes
 metric:
-  name: train_auc
+  name: valid_auc_epoch
   goal: maximize
 parameters:
   model:
@@ -26,4 +26,4 @@ parameters:
   patience:
     value: 10
   n_epochs:
-    value: 20
+    value: 10
