@@ -20,7 +20,7 @@ from .utils import get_logger, logging_conf
 logger = get_logger(logger_conf=logging_conf)
 
 
-def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, n_fold, current_time):
 
     with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
         dict_graph = pickle.load(file)
@@ -95,7 +95,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
             save_checkpoint(
                 state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
                 model_dir=args.model_dir,
-                model_filename="best_model.pt",
+                model_filename=f"{current_time}_fold{n_fold}.pt",
             )
             early_stopping_counter = 0
         else:
@@ -190,10 +190,14 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
     model.eval()
-    _, test_loader = get_loaders(args=args, train=None, valid=test_data)
+
+    with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
+        dict_graph = pickle.load(file)
+    _, test_loader = get_loaders(args=args, train=None, valid=test_data, dict_graph=dict_graph)
 
     total_preds = []
     for step, batch in enumerate(test_loader):
+        print(batch['question'].shape)
         batch = {k: v.to(args.device) for k, v in batch.items()}
         preds = model(batch)
 
@@ -230,7 +234,7 @@ def get_model(args) -> nn.Module:
             "lstmattn": LSTMATTN,
             "bert": BERT,
             "lastquery":LastQuery,
-            'lasyquery':LastQuery2
+            # 'lastquery2':LastQuery_all
         }.get(
             model_name
         )(**model_args)

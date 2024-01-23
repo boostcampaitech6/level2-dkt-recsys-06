@@ -3,6 +3,7 @@ import torch.nn as nn
 from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, BertModel
 import pickle
 import numpy as np
+import copy
 
 
 # 범주형 -> embedding -> linear
@@ -300,17 +301,6 @@ class LastQuery(ModelBase):
         else:
             self.hidden_dim = self.args.hidden_dim
 
-        # Embedding
-        # interaction은 현재 correct으로 구성되어있다. correct(1, 2) + padding(0)
-        # self.embedding_interaction = nn.Embedding(3, self.hidden_dim//3)
-        # self.embedding_test = nn.Embedding(self.args.n_tests + 1, self.hidden_dim//3)
-        # self.embedding_question = nn.Embedding(self.args.n_questions + 1, self.hidden_dim//3)
-        # self.embedding_tag = nn.Embedding(self.args.n_tags + 1, self.hidden_dim//3)
-        # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
-
-        # embedding combination projection
-        # self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
-
         # 기존 keetar님 솔루션에서는 Positional Embedding은 사용되지 않습니다
         # 하지만 사용 여부는 자유롭게 결정해주세요 :)
         # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
@@ -334,6 +324,12 @@ class LastQuery(ModelBase):
             self.args.n_layers,
             batch_first=True)
 
+        self.gru = nn.GRU(
+            self.hidden_dim,
+            self.hidden_dim,
+            self.args.n_layers,
+            batch_first=True)
+        
         # Fully connected layer
         self.fc = nn.Linear(self.hidden_dim, 1)
 
@@ -408,11 +404,10 @@ class LastQuery(ModelBase):
         # embed = embed + embed_pos
 
         ####################### ENCODER #####################
-        q = self.query(embed)[:,-1:,:]
+        q = self.query(embed)[:, -1:, :].permute(1, 0, 2)
 
         # 이 3D gathering은 머리가 아픕니다. 잠시 머리를 식히고 옵니다.
         # q = torch.gather(q, 1, index.repeat(1, self.hidden_dim).unsqueeze(1)) # 마지막 쿼리 빼고 다 가리기
-        q = q.permute(1, 0, 2)
 
         k = self.key(embed).permute(1, 0, 2)
         v = self.value(embed).permute(1, 0, 2)
@@ -437,15 +432,70 @@ class LastQuery(ModelBase):
         ###################### LSTM #####################
         hidden = self.init_hidden(batch_size)
         out, hidden = self.lstm(out, hidden)
+        # out, hidden = self.gru(out, hidden[0])
 
         ###################### DNN #####################
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
-        out = self.fc(out)
+        preds = self.fc(out).view(batch_size, -1)
 
-        preds = self.activation(out).view(batch_size, -1)
+        # preds = self.activation(out).view(batch_size, -1)
 
         return preds
     
+
+    
+class LastQuery_encoder():
+    def __init__(self,
+                 args,
+                hidden_dim: int = 64,
+                n_layers: int = 2,
+                n_tests: int = 1538,
+                n_questions: int = 9455,
+                n_tags: int = 913,
+                **kwargs):
+    
+        if self.args.num_feats:
+            self.hidden_dim = 2*self.args.hidden_dim
+        else:
+            self.hidden_dim = self.args.hidden_dim
+
+        self.query = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
+        self.key = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
+        self.value = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
+
+        self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
+        self.mask = None # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
+        self.ffn = Feed_Forward_block(self.hidden_dim)
+
+        self.ln1 = nn.LayerNorm(self.hidden_dim)
+        self.ln2 = nn.LayerNorm(self.hidden_dim)
+    
+
+    def forward(self, embed):
+
+        q = self.query(embed)[:,-1,:].permute(1,0,2)
+
+        k = self.key(embed).permute(1, 0, 2)
+        v = self.value(embed).permute(1, 0, 2)
+
+        ## attention
+        # last query only
+        # self.mask = self.get_mask(seq_len, index, batch_size).to(self.device)
+        out, _ = self.attn(q, k, v, attn_mask=self.mask)
+
+        ## residual + layer norm
+        out = out.permute(1, 0, 2)
+        out = embed + out
+        out = self.ln1(out)
+
+        ## feed forward network
+        out = self.ffn(out)
+
+        ## residual + layer norm
+        out = embed + out
+        out = self.ln2(out)
+
+        return out
 
 
 class LastQuery2(ModelBase):
@@ -473,17 +523,8 @@ class LastQuery2(ModelBase):
         # 하지만 사용 여부는 자유롭게 결정해주세요 :)
         # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
 
-        # Encoder
-        self.query = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.key = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-        self.value = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
-
-        self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
-        self.mask = None # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
-        self.ffn = Feed_Forward_block(self.hidden_dim)
-
-        self.ln1 = nn.LayerNorm(self.hidden_dim)
-        self.ln2 = nn.LayerNorm(self.hidden_dim)
+        # Encoder            
+        self.encoder = nn.Modulelist([copy.deepcopy(LastQuery_encoder(self.args)) for _ in range(self.args.n_layers)])
 
         # LSTM
         self.lstm = nn.LSTM(
@@ -554,31 +595,7 @@ class LastQuery2(ModelBase):
         # embed = embed + embed_pos
 
         ####################### ENCODER #####################
-        q = self.query(embed)[:,-1:,:]
-
-        # 이 3D gathering은 머리가 아픕니다. 잠시 머리를 식히고 옵니다.
-        # q = torch.gather(q, 1, index.repeat(1, self.hidden_dim).unsqueeze(1)) # 마지막 쿼리 빼고 다 가리기
-        q = q.permute(1, 0, 2)
-
-        k = self.key(embed).permute(1, 0, 2)
-        v = self.value(embed).permute(1, 0, 2)
-
-        ## attention
-        # last query only
-        # self.mask = self.get_mask(seq_len, index, batch_size).to(self.device)
-        out, _ = self.attn(q, k, v, attn_mask=self.mask)
-
-        ## residual + layer norm
-        out = out.permute(1, 0, 2)
-        out = embed + out
-        out = self.ln1(out)
-
-        ## feed forward network
-        out = self.ffn(out)
-
-        ## residual + layer norm
-        out = embed + out
-        out = self.ln2(out)
+        out = self.encoder(embed)
 
         ###################### LSTM #####################
         hidden = self.init_hidden(batch_size)
@@ -586,8 +603,8 @@ class LastQuery2(ModelBase):
 
         ###################### DNN #####################
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
-        out = self.fc(out)
+        out = self.fc(out).view(batch_size, -1)
 
-        preds = self.activation(out).view(batch_size, -1)
+        # preds = self.activation(out).view(batch_size, -1)
 
-        return preds
+        return out

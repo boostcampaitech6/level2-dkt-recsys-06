@@ -138,15 +138,16 @@ class Preprocess:
                     if self.args.n_choice <= len(user_augmented):
                         idx = np.random.choice(np.arange(len(user_augmented)), size=self.args.n_choice, replace=False)
                         augmented_datas += [user_augmented[i] for i in idx]
+
                     # n_choice 보다 적으면 -> 최신 window부터 shuffle로 데이터 추가
-                    else:
-                        shuffle_size = self.args.n_choice - len(user_augmented)
-                        for i in range(shuffle_size):
-                            temp = user_augmented[i] #temp: [n_feats, window_size]
-                            for col in temp: # col:[seq_len]
-                                random.shuffle(col)
-                            user_augmented.append(temp)
-                        augmented_datas += user_augmented
+                    # else:
+                    #     shuffle_size = self.args.n_choice - len(user_augmented)
+                    #     for i in range(shuffle_size):
+                    #         temp = user_augmented[i] #temp: [n_feats, window_size]
+                    #         for col in temp: # col:[seq_len]
+                    #             random.shuffle(col)
+                    #         user_augmented.append(temp)
+                    #     augmented_datas += user_augmented
 
                 else:
                     augmented_datas += list(user_augmented)
@@ -226,7 +227,9 @@ class Preprocess:
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)  # , nrows=100000)
 
-        df = df[df.answerCode>=0]
+        if is_train:
+            df = df[df.answerCode>=0]
+
         # 새로운 범주형 피처에 대해 자동으로 input의 가짓 수 (one-hot의 차원 수) 계산
         for cat in args.new_cat_feats:
             if args.n_cat_feats:
@@ -249,7 +252,7 @@ class Preprocess:
             np.load(os.path.join(self.args.asset_dir, "KnowledgeTag_classes.npy"))
         )
 
-        df = df.sort_values(by=["userID", "Timestamp"], axis=0)
+        df = df.sort_values(by=["userID","Timestamp"], axis=0)
 
         # 최종 피처선택
         # columns = ["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"]
@@ -265,7 +268,7 @@ class Preprocess:
             .apply(lambda r: tuple([r[col].values for col in columns[1:]+['quiz']]))
         ).values
 
-        if self.args.window:
+        if self.args.window and is_train:
             group = self.__data_augmentation(group, self.args) # [n_users, n_feats, seq_len] -> [n_users, n_feats, seq_len]
 
         return group #shape: [n_users*n_choice, n_feats, origianl_seq]

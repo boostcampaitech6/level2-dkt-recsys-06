@@ -17,7 +17,7 @@ def parse_args():
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
     parser.add_argument(
-        "--file_name", default="FE_v3.1.1.csv", type=str, help="train file name"
+        "--file_name", default="FE_v6.csv", type=str, help="train file name"
     )
     parser.add_argument(
         "--model_dir", default="models/", type=str, help="model directory"
@@ -29,7 +29,7 @@ def parse_args():
         "--output_dir", default="../submit/", type=str, help="output directory"
     )
     parser.add_argument(
-        "--test_file_name", default="test_data.csv", type=str, help="test file name"
+        "--test_file_name", default="FE_v6_test.csv", type=str, help="test file name"
     )
 
     parser.add_argument(
@@ -66,7 +66,7 @@ def parse_args():
     # submission 파일
     parser.add_argument(
         "--submission_name",
-        default="dkt_submission.csv",
+        default="dkt_submission1.csv",
         type=str,
         help="submission file name",
     )

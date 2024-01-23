@@ -18,7 +18,7 @@ def main(args: argparse.Namespace):
     
     logger.info("Preparing data ...")
     preprocess = Preprocess(args=args)
-    preprocess.load_test_data(file_name=args.test_file_name)
+    preprocess.load_test_data(file_name=args.test_file_name, args=args)
     test_data: np.ndarray = preprocess.get_test_data()
     
     logger.info("Loading Model ...")
