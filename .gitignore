@@ -16,3 +16,7 @@ code/**/run.log
 data/train_data.csv
 test_data.csv
 /data/ephemeral/level2-dkt-recsys-06/data/test_data.csv
+/data
+/data/ephemeral/level2-dkt-recsys-06/data
+/data/ephemeral/level2-dkt-recsys-06/data/
+data/ephemeral/level2-dkt-recsys-06/data/
