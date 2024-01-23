@@ -11,3 +11,7 @@ code/**/run.log
 *.tfevents
 
 code/**/catboost_info
+
+*.json
+
+*.pkl
