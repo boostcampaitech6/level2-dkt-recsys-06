@@ -58,7 +58,7 @@ def main(args):
             logger.info("Start Training ...")
             args.submission_name = f"{current_time} {i+1}th fold"
             trainer.run(
-                args=args, train_data=train_data, valid_data=valid_data, model=model
+                args=args, train_data=train_data, valid_data=valid_data, model=model, kfold=i+1
             )
 
             wandb.finish()

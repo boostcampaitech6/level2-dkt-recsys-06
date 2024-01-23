@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import torch
+from collections import OrderedDict
 from torch import nn
 from torch.nn.functional import sigmoid
 import wandb
@@ -20,7 +21,7 @@ from .utils import get_logger, logging_conf
 logger = get_logger(logger_conf=logging_conf)
 
 
-def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module): # , kfold: int):
     with open(
         "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
         "rb",
@@ -41,6 +42,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
     scheduler = get_scheduler(optimizer=optimizer, args=args)
 
     best_auc = -1
+    best_val_loss = 1e9
     early_stopping_counter = 0
     for epoch in range(args.n_epochs):
         logger.info("Start Training: Epoch %s", epoch + 1)
@@ -69,14 +71,17 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
             )
         )
 
-        if auc > best_auc:
-            best_auc = auc
-            # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+        # if auc > best_auc:
+        #     best_auc = auc
+        if loss < best_val_loss:
+            best_val_loss = loss
+        #     # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, "module") else model
             save_checkpoint(
                 state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
                 model_dir=args.model_dir,
-                model_filename="best_model.pt",
+                # model_filename= f"best_model_{kfold}.pt",
+                model_filename= f"best_model.pt",
             )
             early_stopping_counter = 0
         else:
@@ -170,8 +175,14 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
     model.eval()
-    _, test_loader = get_loaders(args=args, train=None, valid=test_data)
+    _, test_loader = get_loaders(args=args, train=None, valid=test_data, dict_graph=dict_graph)
 
     total_preds = []
     for step, batch in enumerate(test_loader):
@@ -266,9 +277,14 @@ def load_model(args):
     model_path = os.path.join(args.model_dir, args.model_name)
     logger.info("Loading Model from: %s", model_path)
     load_state = torch.load(model_path)
+    tmp_dict = OrderedDict()
+    for i, j in load_state["state_dict"].items():
+        name = i.replace("comb_proj", "")
+        tmp_dict[name] = j
     model = get_model(args)
 
     # load model state
-    model.load_state_dict(load_state["state_dict"], strict=True)
+    # model.load_state_dict(load_state["state_dict"], strict=True)
+    model.load_state_dict(tmp_dict, strict=False)
     logger.info("Successfully loaded model state from: %s", model_path)
     return model

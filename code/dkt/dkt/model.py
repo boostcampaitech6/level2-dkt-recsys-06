@@ -284,7 +284,7 @@ class LastQuery(ModelBase):
         self,
         args,
         hidden_dim: int = 64,
-        n_layers: int = 2,
+        n_layers: int = 1,
         n_tests: int = 1538,
         n_questions: int = 9455,
         n_tags: int = 913,
@@ -439,6 +439,6 @@ class LastQuery(ModelBase):
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
         out = self.fc(out)
 
-        preds = self.activation(out).view(batch_size, -1)
+        # preds = self.activation(out).view(batch_size, -1)
 
-        return preds
+        return out.view(batch_size, -1)

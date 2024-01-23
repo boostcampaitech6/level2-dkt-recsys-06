@@ -17,13 +17,13 @@ def parse_args():
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
     parser.add_argument(
-        "--file_name", default="FE_v5.csv", type=str, help="train file name"
+        "--file_name", default="FE_v7.csv", type=str, help="train file name"
     )
     parser.add_argument(
         "--model_dir", default="models/", type=str, help="model directory"
     )
     parser.add_argument(
-        "--model_name", default="best_model.pt", type=str, help="model file name"
+        "--model_name", default="best_model_1.pt", type=str, help="model file name"
     )
     parser.add_argument(
         "--output_dir", default="../submit/", type=str, help="output directory"
@@ -66,7 +66,7 @@ def parse_args():
     # submission 파일
     parser.add_argument(
         "--submission_name",
-        default="dkt_submission.csv",
+        default="lastquery.csv",
         type=str,
         help="submission file name",
     )
@@ -109,19 +109,21 @@ def parse_args():
     )
 
     # 실험 대상
-    parser.add_argument("--new_num_feats", nargs="+", default=[], help="새로운 수치형 변수")
-    parser.add_argument("--new_cat_feats", nargs="+", default=[], help="새로운 범주형 변수")
+    parser.add_argument("--new_num_feats", nargs="+", default=[""], help="새로운 수치형 변수")
+    parser.add_argument("--new_cat_feats", nargs="+", default=[""], help="새로운 범주형 변수")
 
     args = parser.parse_args()
 
-    if args.new_num_feats[0] == "":
-        args.new_num_feats = []
-    else:
-        args.new_num_feats = args.new_num_feats[0].split(" ")
-    if args.new_cat_feats[0] == "":
-        args.new_cat_feats = []
-    else:
-        args.new_cat_feats = args.new_cat_feats[0].split(" ")
+    if len(args.new_num_feats) == 1:
+        if args.new_num_feats[0] == "":
+            args.new_num_feats = []
+        else:
+            args.new_num_feats = args.new_num_feats[0].split(" ")
+    if len(args.new_cat_feats) == 1:
+        if args.new_cat_feats[0] == "":
+            args.new_cat_feats = []
+        else:
+            args.new_cat_feats = args.new_cat_feats[0].split(" ")
 
     args.num_feats = args.base_num_feats + args.new_num_feats
     args.cat_feats = args.base_cat_feats + args.new_cat_feats
