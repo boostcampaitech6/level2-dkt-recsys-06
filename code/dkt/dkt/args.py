@@ -23,13 +23,13 @@ def parse_args():
         "--model_dir", default="models/", type=str, help="model directory"
     )
     parser.add_argument(
-        "--model_name", default="best_model_1.pt", type=str, help="model file name"
+        "--model_name", default="best_model.pt", type=str, help="model file name"
     )
     parser.add_argument(
         "--output_dir", default="../submit/", type=str, help="output directory"
     )
     parser.add_argument(
-        "--test_file_name", default="test_data.csv", type=str, help="test file name"
+        "--test_file_name", default="test_data_.csv", type=str, help="test file name"
     )
 
     parser.add_argument(
@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument(
         "--hidden_dim", default=64, type=int, help="hidden dimension size"
     )
-    parser.add_argument("--n_layers", default=2, type=int, help="number of layers")
+    parser.add_argument("--n_layers", default=1, type=int, help="number of layers")
     parser.add_argument("--n_heads", default=2, type=int, help="number of heads")
     parser.add_argument("--drop_out", default=0.2, type=float, help="drop out rate")
 

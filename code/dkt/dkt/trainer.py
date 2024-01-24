@@ -81,7 +81,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
                 state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
                 model_dir=args.model_dir,
                 # model_filename= f"best_model_{kfold}.pt",
-                model_filename= f"best_model.pt",
+                model_filename= "best_model.pt",
             )
             early_stopping_counter = 0
         else:
@@ -96,7 +96,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
 
         # scheduler
         if args.scheduler == "plateau":
-            scheduler.step(best_auc)
+            scheduler.step(best_val_loss)
 
 
 def train(

@@ -234,7 +234,8 @@ class Preprocess:
         csv_file_path = os.path.join(self.args.data_dir, file_name)
         df = pd.read_csv(csv_file_path)  # , nrows=100000)
 
-        df = df[df.answerCode >= 0]
+        if is_train:
+            df = df[df.answerCode >= 0]
         # 새로운 범주형 피처에 대해 자동으로 input의 가짓 수 (one-hot의 차원 수) 계산
         for cat in args.new_cat_feats:
             if args.n_cat_feats:
@@ -277,7 +278,7 @@ class Preprocess:
             .apply(lambda r: tuple([r[col].values for col in columns[1:] + ["quiz"]]))
         ).values
 
-        if self.args.window:
+        if self.args.window and is_train:
             group = self.__data_augmentation(
                 group, self.args
             )  # [n_users, n_feats, seq_len] -> [n_users, n_feats, seq_len]
