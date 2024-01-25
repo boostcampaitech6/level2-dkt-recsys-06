@@ -34,8 +34,8 @@ def main(args):
     data: np.ndarray = preprocess.get_train_data()
 
     if args.kfolds!=0:
-        # folds = preprocess.kfold(data=data, k=args.kfolds)
-        folds = preprocess.manual_kfold(data=data, k=args.kfolds)
+        folds = preprocess.kfold(data=data, k=args.kfolds)
+        # folds = preprocess.manual_kfold(data=data, k=args.kfolds)
 
         for i, (train_data, valid_data) in enumerate(folds):
 
@@ -62,7 +62,7 @@ def main(args):
 
     else:
         train_data, valid_data = preprocess.split_data(data=data)
-    
+
         wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
         wandb.run.name = "Hyeongjin Cho " + current_time
         wandb.run.save()
@@ -72,7 +72,7 @@ def main(args):
         model: torch.nn.Module = trainer.get_model(args=args).to(args.device)
         
         logger.info("Start Training ...")
-        trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model)
+        trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model, n_fold=0, current_time=current_time)
 
         wandb.finish()
 

@@ -300,7 +300,7 @@ class DKTDataset(torch.utils.data.Dataset):
 
         if self.args.graph_embed:
             quiz= row[-1]
-            embed_graph = [self.dict_graph[id] for id in quiz]
+            embed_graph = [self.dict_graph['A0'+str(id)] for id in quiz]
 
         # loader 넘어가기 위해 준비
         data = {
@@ -356,7 +356,6 @@ class DKTDataset(torch.utils.data.Dataset):
         interaction = (interaction * interaction_mask).to(torch.int64)
         data["interaction"] = torch.LongTensor(interaction)
 
-
         return data
 
     def __len__(self) -> int:
@@ -385,7 +384,7 @@ def get_loaders(
             num_workers=args.num_workers,
             shuffle=False,
             batch_size=args.batch_size,
-            pin_memory=pin_memory,
+            pin_memory=pin_memory
         )
 
     return train_loader, valid_loader

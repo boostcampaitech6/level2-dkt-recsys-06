@@ -6,7 +6,7 @@ from transformers import get_linear_schedule_with_warmup
 def get_scheduler(optimizer: torch.optim.Optimizer, args):
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(
-            optimizer, patience=10, factor=0.5, mode="max", verbose=True
+            optimizer, patience=2, factor=0.5, mode="min", verbose=True
         )
     elif args.scheduler == "linear_warmup":
         scheduler = get_linear_schedule_with_warmup(

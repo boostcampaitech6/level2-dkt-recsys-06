@@ -110,7 +110,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, 
 
         # scheduler
         if args.scheduler == "plateau":
-            scheduler.step(best_auc)
+            scheduler.step(best_val_loss)
 
 
 def train(
@@ -198,6 +198,8 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
     total_preds = []
     for step, batch in enumerate(test_loader):
         print(batch['question'].shape)
+        print(batch['correct'][:,-1])
+
         batch = {k: v.to(args.device) for k, v in batch.items()}
         preds = model(batch)
 
@@ -234,7 +236,8 @@ def get_model(args) -> nn.Module:
             "lstmattn": LSTMATTN,
             "bert": BERT,
             "lastquery":LastQuery,
-            # 'lastquery2':LastQuery_all
+            'lastquery2':LastQuery2,
+            # 'saint':Saint
         }.get(
             model_name
         )(**model_args)

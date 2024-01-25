@@ -17,7 +17,7 @@ def parse_args():
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
     parser.add_argument(
-        "--file_name", default="FE_v6.csv", type=str, help="train file name"
+        "--file_name", default="FE_v8.csv", type=str, help="train file name"
     )
     parser.add_argument(
         "--model_dir", default="models/", type=str, help="model directory"
@@ -29,7 +29,7 @@ def parse_args():
         "--output_dir", default="../submit/", type=str, help="output directory"
     )
     parser.add_argument(
-        "--test_file_name", default="FE_v6_test.csv", type=str, help="test file name"
+        "--test_file_name", default="FE_v8_test.csv", type=str, help="test file name"
     )
 
     parser.add_argument(
@@ -66,7 +66,7 @@ def parse_args():
     # submission 파일
     parser.add_argument(
         "--submission_name",
-        default="dkt_submission1.csv",
+        default="dkt_submission_21.csv",
         type=str,
         help="submission file name",
     )
@@ -85,6 +85,9 @@ def parse_args():
 
     ### random sampling
     parser.add_argument('--n_choice', default=0, type=int, help='random sampling in augmentation?')
+
+    ### Tfixup
+    parser.add_argument("--Tfixup", default='True', type=strtobool, help='initialize parameters?')
 
     ### feature engineering
     # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형
