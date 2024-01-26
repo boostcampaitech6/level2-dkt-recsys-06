@@ -20,4 +20,8 @@ code/**/run.log
 
 *.npy
 
+<<<<<<< HEAD
 *.parquet
+=======
+*.parquet
+>>>>>>> wooksbaby

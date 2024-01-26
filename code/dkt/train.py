@@ -26,10 +26,15 @@ def main(args):
 
     set_seeds(args.seed)
     args.device = "cuda" if torch.cuda.is_available() else "cpu"
+<<<<<<< HEAD
+=======
+    args.submission_name = f'{args.model}_current_time'
+>>>>>>> wooksbaby
 
     logger.info("Preparing data ...")
     preprocess = Preprocess(args)
     preprocess.load_train_data(args=args, file_name=args.file_name)
+<<<<<<< HEAD
     train_data: np.ndarray = preprocess.get_train_data()
     train_data, valid_data = preprocess.split_data(data=train_data)
     wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
@@ -43,9 +48,63 @@ def main(args):
     trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model)
 
     wandb.finish()
+=======
+    data: np.ndarray = preprocess.get_train_data()
+
+    if args.kfolds!=0:
+        folds = preprocess.kfold(data=data, k=args.kfolds)
+        # folds = preprocess.manual_kfold(data=data, k=args.kfolds)
+
+        for i, (train_data, valid_data) in enumerate(folds):
+
+            wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
+            wandb.run.name = f"Hyeongjin Cho {current_time} {i+1}th fold"
+            wandb.run.save()
+
+            print(f'Starting {i+1}th fold ...')
+            # train_id, val_id = fold
+            # train_data = [data[i] for i in train_id] # sliding window 적용하면 무조건 list 자료형이어야 함 ㅜ
+            # valid_data = [data[i] for i in val_id]
+            print('data size:', len(train_data), len(valid_data))
+
+            logger.info("Building Model ...")
+            model: torch.nn.Module = trainer.get_model(args=args).to(args.device)
+            
+            logger.info("Start Training ...")
+            args.submission_name = f"{current_time} {i+1}th fold"
+            trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model, n_fold=i+1, current_time=current_time)
+        
+            wandb.finish()
+            
+
+
+    else:
+        train_data, valid_data = preprocess.split_data(data=data)
+
+        wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
+        wandb.run.name = "Hyeongjin Cho " + current_time
+        wandb.run.save()
+
+        
+        logger.info("Building Model ...")
+        model: torch.nn.Module = trainer.get_model(args=args).to(args.device)
+        
+        logger.info("Start Training ...")
+        trainer.run(args=args, train_data=train_data, valid_data=valid_data, model=model, n_fold=0, current_time=current_time)
+
+        wandb.finish()
+
+
+
+>>>>>>> wooksbaby
 
 
 if __name__ == "__main__":
     args = parse_args()
+
+    if args.kfolds!=0 and args.window==True and args.n_choice!=0:
+        if args.kfolds % args.n_choice != 0 and args.n_choice % args.kfolds != 0:
+            args.error('n_choice는 반드시 kfold의 배수여야 합니다. ex) 5,10 정 안되면 10,5으로 두 명의 유저씩 kfold')
+
     os.makedirs(args.model_dir, exist_ok=True)
     main(args)

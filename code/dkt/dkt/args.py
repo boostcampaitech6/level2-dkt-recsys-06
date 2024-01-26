@@ -1,4 +1,5 @@
 import argparse
+from distutils.util import strtobool
 
 
 def parse_args():
@@ -16,7 +17,11 @@ def parse_args():
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
     parser.add_argument(
+<<<<<<< HEAD
         "--file_name", default="augment.csv", type=str, help="train file name"
+=======
+        "--file_name", default="FE_v8.csv", type=str, help="train file name"
+>>>>>>> wooksbaby
     )
     parser.add_argument(
         "--model_dir", default="models/", type=str, help="model directory"
@@ -28,7 +33,7 @@ def parse_args():
         "--output_dir", default="../submit/", type=str, help="output directory"
     )
     parser.add_argument(
-        "--test_file_name", default="test_data.csv", type=str, help="test file name"
+        "--test_file_name", default="FE_v8_test.csv", type=str, help="test file name"
     )
 
     parser.add_argument(
@@ -65,11 +70,36 @@ def parse_args():
     # submission 파일
     parser.add_argument(
         "--submission_name",
+<<<<<<< HEAD
         default="dkt_submission.csv",
+=======
+        default="dkt_submission_21.csv",
+>>>>>>> wooksbaby
         type=str,
         help="submission file name",
     )
 
+<<<<<<< HEAD
+=======
+    ### graph embedding
+    parser.add_argument("--graph_embed", default='False', type=strtobool, help='use graph embedding?')
+
+    ### sliding window
+    parser.add_argument("--window", default='True', type=strtobool, help='use slidding window?')
+    parser.add_argument("--stride", default=1, type=int, help='choose stride if slide windows')
+    parser.add_argument("--shuffle", default='False', type=strtobool, help='use slidding window?')
+    parser.add_argument("--shuffle_n", default=1, type=int, help='use slidding window?')
+
+    ### kfold
+    parser.add_argument('--kfolds', default=0, type=int, help='kfold?')
+
+    ### random sampling
+    parser.add_argument('--n_choice', default=0, type=int, help='random sampling in augmentation?')
+
+    ### Tfixup
+    parser.add_argument("--Tfixup", default='True', type=strtobool, help='initialize parameters?')
+
+>>>>>>> wooksbaby
     ### feature engineering
     # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형
 
@@ -78,8 +108,13 @@ def parse_args():
     parser.add_argument(
         "--base_cat_feats",
         nargs="+",
+<<<<<<< HEAD
         default=["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"],
         help="기본 범주형 변수",
+=======
+        default=["userID", "answerCode", "assessmentItemID", "testId", "KnowledgeTag"],
+        help="기본 범주형 변수"
+>>>>>>> wooksbaby
     )
 
     # 실험 대상
@@ -94,5 +129,12 @@ def parse_args():
     args.feats = args.cat_feats + args.num_feats
 
     args.n_cat_feats = []  # 범주형 추가된다면 사용
+
+    args.num_feats = args.base_num_feats + args.new_num_feats
+    args.cat_feats = args.base_cat_feats + args.new_cat_feats
+
+    args.feats = args.cat_feats + args.num_feats
+
+    args.n_cat_feats = [] # 범주형 추가된다면 사용
 
     return args

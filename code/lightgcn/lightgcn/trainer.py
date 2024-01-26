@@ -5,7 +5,8 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, roc_auc_score
 import torch
 from torch import nn
-from torch_geometric.nn.models import LightGCN
+# from torch_geometric.nn.models import LightGCN
+from .lightgcn_source import LightGCN
 import wandb
 
 from .utils import get_logger, logging_conf
@@ -42,9 +43,14 @@ def run(
 
     os.makedirs(name=model_dir, exist_ok=True)
 
+    # validation 아직 없으면 일부 떼어서 만들어!
     if valid_data is None:
         eids = np.arange(len(train_data["label"]))
-        eids = np.random.permutation(eids)[:1000]
+        
+        #train_idx = eids[1000:]
+        #val_idx = eids[:1000] # validation 용 edge_id(link) 1000개 추출
+        eids = np.random.permutation(eids)[:200000]
+
         edge, label = train_data["edge"], train_data["label"]
         label = label.to("cpu").detach().numpy()
         valid_data = dict(edge=edge[:, eids], label=label[eids])
@@ -70,6 +76,7 @@ def run(
             )
         )
 
+        # best model.pt 업데이트
         if auc > best_auc:
             logger.info("Best model updated AUC from %.4f to %.4f", best_auc, auc)
             best_auc, best_epoch = auc, e
@@ -82,6 +89,8 @@ def run(
         f=os.path.join(model_dir, f"last_model.pt"),
     )
     logger.info(f"Best Weight Confirmed : {best_epoch+1}'th epoch")
+
+    return model.get_embedding(train_data['edge']).detach().cpu().numpy()
 
 
 def train(model: nn.Module, train_data: dict, optimizer: torch.optim.Optimizer):
