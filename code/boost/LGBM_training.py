@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Callable
 import wandb
 from wandb.sdk.lib import telemetry as wb_telemetry
 
+
 MINIMIZE_METRICS = [
     "l1",
     "l2",
@@ -36,7 +37,6 @@ MINIMIZE_METRICS = [
 ]
 
 MAXIMIZE_METRICS = ["map", "auc", "average_precision"]
-
 
 def set_seeds(seed: int = 42):
     # 랜덤 시드를 설정하여 매 코드를 실행할 때마다 동일한 결과를 얻게 합니다.
@@ -205,6 +205,7 @@ Categorical_Feature = [
 ]
 Feature = Feature + Categorical_Feature
 
+
 # as category: integer여도 범주형으로 취급 가능
 for feature in Categorical_Feature:
     test[feature] = test[feature].astype("category")
@@ -226,8 +227,8 @@ exclude_columns = [
     "categorize_TagAnswerRate",
     "CategorizedDegree"
 ]
-
-filtered_feat = [column for column in feat if column not in exclude_columns]
+fitered_feat = [col for col in Feature if col in feat]
+filtered_feat = [column for column in Feature if column not in exclude_columns]
 
 
 def train():
@@ -263,7 +264,6 @@ def train():
     wandb.run.name = f"wook {current_time}"
     current_params = {
         "objective": "binary",
-        "metric": ["auc"],
         "device": "cpu",
         "num_leaves": wandb.config.num_leaves,
         "learning_rate": wandb.config.learning_rate,
@@ -274,8 +274,9 @@ def train():
         "bagging_freq": wandb.config.bagging_freq,
         "lambda_l1": wandb.config.lambda_l1,
         "lambda_l2": wandb.config.lambda_l2,
-        # "cat_smooth": wandb.config.cat_smooth,
+        "cat_smooth": wandb.config.cat_smooth,
     }
+
     model = lgb.train(
         current_params,
         lgb_train,
@@ -293,6 +294,7 @@ def train():
             "Month",
         ],
     )
+
     preds = model.predict(X_valid[filtered_feat])
     acc = accuracy_score(y_valid, np.where(preds >= 0.5, 1, 0))
     auc = roc_auc_score(y_valid, preds)
@@ -305,7 +307,7 @@ def train():
     output_dir = "output/"
     write_path = os.path.join(
         output_dir,
-        f"auc:{auc} acc:{acc}" + "sweep" + " lgbm.csv",
+        f"auc:{auc} acc:{acc}" +current_time+ "sweep" + " lgbm.csv",
     )
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

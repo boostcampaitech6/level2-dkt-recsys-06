@@ -1,5 +1,10 @@
 project: lightgbm-sweep
 method: bayes
+program: LGBM_training.py
+name: Hyeongjin
+description: dkt lgbm sweep
+entity: boostcamp6-recsys6
+
 
 metric:
   name: auc
