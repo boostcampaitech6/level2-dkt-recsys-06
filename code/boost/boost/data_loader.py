@@ -11,16 +11,6 @@ from sklearn import preprocessing
 
 
 class Dataset:
-<<<<<<< HEAD
-    def __init__(self, train: pd.DataFrame, args):
-        self.train = train
-        self.args = args
-
-    def restruct_data(self) -> dict:
-        # train과 test 분할
-        data = {}
-        df = self.train.sort_values(by=["userID", "Timestamp", "assessmentItemID"]).reset_index(drop=True)
-=======
     def __init__(self, train: pd.DataFrame, test: pd.DataFrame):
         self.train = train
         self.test = test
@@ -38,17 +28,12 @@ class Dataset:
             drop=True
         )
         df = pd.concat([self.train, self.test], axis=0)
->>>>>>> wonhee
         train = df[df["answerCode"] >= 0]
         test = df[df["answerCode"] == -1]
         data["train"], data["test"] = train, test
         return data
-<<<<<<< HEAD
     
     
-=======
-
->>>>>>> wonhee
     def split_data(self) -> dict:
         """
         data의 구성
@@ -56,7 +41,6 @@ class Dataset:
         data['train_split'] : 전체 user_id별 마지막으로 푼 문제를 제외한 데이터
         data['valid'] : 전체 user_id별 마지막으로 푼 문제에 대한 데이터
         """
-<<<<<<< HEAD
         data = self.restruct_data()
         
         train = data['train'].copy()
@@ -89,48 +73,3 @@ class Dataset:
 
         return data
 
-=======
-
-        data = self.restruct_data()
-        df = data["train"]
-        df["is_valid"] = [False] * df.shape[0]
-        df.loc[
-            df.drop_duplicates(subset="userID", keep="last").index, "is_valid"
-        ] = True
-
-        train, valid = df[df["is_valid"] == False], df[df["is_valid"] == True]
-        train = train.drop("is_valid", axis=1)
-        valid = valid.drop("is_valid", axis=1)
-        data["train_split"], data["valid"] = train, valid
-
-        return data
-
-
-class Preprocess:
-    def __init__(self, args, data: dict):
-        self.args = args
-        self.data = data
-
-    def type_conversion(self) -> dict:
-        self.data["train_x"] = self.data["train"].drop("answerCode", axis=1)
-        self.data["train_y"] = self.data["train"]["answerCode"]
-
-        self.data["valid_x"] = self.data["valid"].drop("answerCode", axis=1)
-        self.data["valid_y"] = self.data["valid"]["answerCode"]
-
-        self.data["test"] = self.data["test"].drop("answerCode", axis=1)
-
-        # 카테고리형 feature
-        for state in ["train_x", "valid_x", "test"]:
-            df = self.data[state]
-            le = preprocessing.LabelEncoder()
-            for feature in df.columns:
-                if df[feature].dtypes == "object" or df[feature].dtypes == "UInt32":
-                    df[feature] = le.fit_transform(df[feature])
-            self.data[state] = df
-        return self.data
-
-    def preprocess(self) -> dict:
-        data = self.type_conversion()
-        return data
->>>>>>> wonhee
