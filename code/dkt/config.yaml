@@ -1,0 +1,38 @@
+program: train.py
+name: lastquery
+description: lastquery model sweep
+project: level2-lastquery
+entity: boostcamp6-recsys6
+method: random
+metric:
+  name: valid_auc_epoch
+  goal: maximize
+parameters:
+  model:
+    values: ['lastquery'] #, 'XG', 'LGBM']
+  new_cat_feats:
+    values: ["categorize_solvingTime categorize_TagAnswerRate categorize_CumulativeUserTagExponentialAverage categorize_TestAnswerRate",
+     "categorize_solvingTime categorize_TagAnswerRate categorize_CumulativeUserTagExponentialAverage"]
+  new_num_feats:
+    values: ["", "CumulativeUserTagExponentialAverage CumulativeUserItemAnswerRate", "CumulativeUserTagExponentialAverage TagAnswerRate"]
+  # n_choice:
+  #   values: [5, 10]
+  # kfold:
+  #   value: 5
+  # window:
+  #   value: True
+  n_layers:
+    value: 1
+  max_seq_len:
+    values: [20, 40, 80, 100, 200]
+  patience:
+    value: 5
+  n_epochs:
+    value: 100
+  lr:
+    min: 0.000001
+    max: 0.0001
+  drop_out:
+    values: [0.1, 0.2]
+  optimizer:
+    values: ["adam", "adamW"]

@@ -3,14 +3,24 @@ import os
 
 import numpy as np
 import torch
+from collections import OrderedDict
 from torch import nn
 from torch.nn.functional import sigmoid
 import wandb
+import pickle
 
 from .criterion import get_criterion
 from .dataloader import get_loaders
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, BERT
+<<<<<<< HEAD
+<<<<<<< HEAD
+from .model import LSTM, LSTMATTN, BERT, LastQuery, LastQuery2
+=======
+from .model import LSTM, LSTMATTN, BERT, LastQuery
+>>>>>>> wonhee
+=======
+from .model import LSTM, LSTMATTN, BERT, LastQuery
+>>>>>>> wonhee
 from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .utils import get_logger, logging_conf
@@ -19,11 +29,44 @@ from .utils import get_logger, logging_conf
 logger = get_logger(logger_conf=logging_conf)
 
 
-def run(args,
-        train_data: np.ndarray,
-        valid_data: np.ndarray,
-        model: nn.Module):
-    train_loader, valid_loader = get_loaders(args=args, train=train_data, valid=valid_data)
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
+    train_loader, valid_loader = get_loaders(
+        args=args, train=train_data, valid=valid_data
+=======
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, n_fold, current_time):
+
+    with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
+        dict_graph = pickle.load(file)
+    
+    train_loader, valid_loader = get_loaders(
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
+>>>>>>> wooksbaby
+=======
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module): # , kfold: int):
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
+    train_loader, valid_loader = get_loaders(
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
+>>>>>>> wonhee
+=======
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module): # , kfold: int):
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
+    train_loader, valid_loader = get_loaders(
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
+>>>>>>> wonhee
+    )
 
     # For warmup scheduler which uses step interval
     args.total_steps = int(math.ceil(len(train_loader.dataset) / args.batch_size)) * (
@@ -35,53 +78,143 @@ def run(args,
     scheduler = get_scheduler(optimizer=optimizer, args=args)
 
     best_auc = -1
+    best_val_loss = 1e9
     early_stopping_counter = 0
     for epoch in range(args.n_epochs):
         logger.info("Start Training: Epoch %s", epoch + 1)
 
         # TRAIN
-        train_auc, train_acc, train_loss = train(train_loader=train_loader,
-                                                 model=model, optimizer=optimizer,
-                                                 scheduler=scheduler, args=args)
+        train_auc, train_acc, train_loss = train(
+            train_loader=train_loader,
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            args=args,
+        )
 
         # VALID
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
         auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
+=======
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
+>>>>>>> wooksbaby
+=======
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
+>>>>>>> wonhee
+=======
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
+>>>>>>> wonhee
 
-        wandb.log(dict(epoch=epoch,
-                       train_loss_epoch=train_loss,
-                       train_auc_epoch=train_auc,
-                       train_acc_epoch=train_acc,
-                       valid_auc_epoch=auc,
-                       valid_acc_epoch=acc))
-        
+        wandb.log(
+            dict(
+                epoch=epoch,
+                train_loss_epoch=train_loss,
+                train_auc_epoch=train_auc,
+                train_acc_epoch=train_acc,
+                valid_auc_epoch=auc,
+                valid_acc_epoch=acc,
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+            )
+        )
+
         if auc > best_auc:
             best_auc = auc
+=======
+                valid_loss_epoch=loss
+            )
+        )
+
+        # if auc > best_auc:
+        #     best_auc = auc
+        #     # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+        #     model_to_save = model.module if hasattr(model, "module") else model
+        #     save_checkpoint(
+        #         state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
+        #         model_dir=args.model_dir,
+        #         model_filename="best_model.pt",
+        #     )
+        #     early_stopping_counter = 0
+        # else:
+        #     early_stopping_counter += 1
+        #     if early_stopping_counter >= args.patience:
+        #         logger.info(
+        #             "EarlyStopping counter: %s out of %s",
+        #             early_stopping_counter,
+        #             args.patience,
+        #         )
+        #         break
+        
+        if loss < best_val_loss:
+            best_val_loss = loss
+>>>>>>> wooksbaby
             # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+=======
+                valid_loss_epoch=loss,
+            )
+        )
+
+=======
+                valid_loss_epoch=loss,
+            )
+        )
+
+>>>>>>> wonhee
+        # if auc > best_auc:
+        #     best_auc = auc
+        if loss < best_val_loss:
+            best_val_loss = loss
+        #     # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
+>>>>>>> wonhee
             model_to_save = model.module if hasattr(model, "module") else model
-            save_checkpoint(state={"epoch": epoch + 1,
-                                   "state_dict": model_to_save.state_dict()},
-                            model_dir=args.model_dir,
-                            model_filename="best_model.pt")
+            save_checkpoint(
+                state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
+                model_dir=args.model_dir,
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+                model_filename="best_model.pt",
+=======
+                model_filename=f"{current_time}_fold{n_fold}.pt",
+>>>>>>> wooksbaby
+=======
+                # model_filename= f"best_model_{kfold}.pt",
+                model_filename= "best_model.pt",
+>>>>>>> wonhee
+=======
+                # model_filename= f"best_model_{kfold}.pt",
+                model_filename= "best_model.pt",
+>>>>>>> wonhee
+            )
             early_stopping_counter = 0
         else:
             early_stopping_counter += 1
             if early_stopping_counter >= args.patience:
                 logger.info(
                     "EarlyStopping counter: %s out of %s",
-                    early_stopping_counter, args.patience
+                    early_stopping_counter,
+                    args.patience,
                 )
                 break
 
         # scheduler
         if args.scheduler == "plateau":
-            scheduler.step(best_auc)
+            scheduler.step(best_val_loss)
 
 
-def train(train_loader: torch.utils.data.DataLoader,
-          model: nn.Module,
-          optimizer: torch.optim.Optimizer,
-          scheduler: torch.optim.lr_scheduler._LRScheduler,
-          args):
+def train(
+    train_loader: torch.utils.data.DataLoader,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
+    args,
+):
     model.train()
 
     total_preds = []
@@ -89,19 +222,20 @@ def train(train_loader: torch.utils.data.DataLoader,
     losses = []
     for step, batch in enumerate(train_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
         targets = batch["correct"]
-        
+
         loss = compute_loss(preds=preds, targets=targets)
-        update_params(loss=loss, model=model, optimizer=optimizer,
-                      scheduler=scheduler, args=args)
+        update_params(
+            loss=loss, model=model, optimizer=optimizer, scheduler=scheduler, args=args
+        )
 
         if step % args.log_steps == 0:
             logger.info("Training steps: %s Loss: %.4f", step, loss.item())
 
         # predictions
-        preds = sigmoid(preds[:, -1])
-        targets = targets[:, -1]
+        preds = sigmoid(preds[:, -1])  # 마지막 time-step의 output
+        targets = targets[:, -1]  # 마지막 time-step의 label
 
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
@@ -122,10 +256,15 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
     total_preds = []
     total_targets = []
+    losses = []
+
     for step, batch in enumerate(valid_loader):
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
         targets = batch["correct"]
+
+        loss = compute_loss(preds=preds, targets=targets)
+        losses.append(loss)
 
         # predictions
         preds = sigmoid(preds[:, -1])
@@ -134,23 +273,42 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
         total_preds.append(preds.detach())
         total_targets.append(targets.detach())
 
+    losses_avg = sum(losses) / len(losses)
     total_preds = torch.concat(total_preds).cpu().numpy()
     total_targets = torch.concat(total_targets).cpu().numpy()
 
     # Train AUC / ACC
     auc, acc = get_metric(targets=total_targets, preds=total_preds)
     logger.info("VALID AUC : %.4f ACC : %.4f", auc, acc)
-    return auc, acc
+    return auc, acc, losses_avg
 
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
     model.eval()
-    _, test_loader = get_loaders(args=args, train=None, valid=test_data)
+<<<<<<< HEAD
+<<<<<<< HEAD
+
+    with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
+        dict_graph = pickle.load(file)
+=======
+>>>>>>> wonhee
+=======
+>>>>>>> wonhee
+    _, test_loader = get_loaders(args=args, train=None, valid=test_data, dict_graph=dict_graph)
 
     total_preds = []
     for step, batch in enumerate(test_loader):
+        print(batch['question'].shape)
+        print(batch['correct'][:,-1])
+
         batch = {k: v.to(args.device) for k, v in batch.items()}
-        preds = model(**batch)
+        preds = model(batch)
 
         # predictions
         preds = sigmoid(preds[:, -1])
@@ -168,6 +326,7 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
 
 def get_model(args) -> nn.Module:
     model_args = dict(
+        args=args,
         hidden_dim=args.hidden_dim,
         n_layers=args.n_layers,
         n_tests=args.n_tests,
@@ -183,12 +342,31 @@ def get_model(args) -> nn.Module:
             "lstm": LSTM,
             "lstmattn": LSTMATTN,
             "bert": BERT,
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+            "lastquery":LastQuery,
+            'lastquery2':LastQuery2,
+            # 'saint':Saint
+>>>>>>> wooksbaby
+        }.get(
+            model_name
+        )(**model_args)
+=======
+            "lastquery": LastQuery,
         }.get(model_name)(**model_args)
+>>>>>>> wonhee
+=======
+            "lastquery": LastQuery,
+        }.get(model_name)(**model_args)
+>>>>>>> wonhee
     except KeyError:
         logger.warn("No model name %s found", model_name)
     except Exception as e:
         logger.warn("Error while loading %s with args: %s", model_name, model_args)
         raise e
+
     return model
 
 
@@ -203,18 +381,22 @@ def compute_loss(preds: torch.Tensor, targets: torch.Tensor):
     loss = get_criterion(pred=preds, target=targets.float())
 
     # 마지막 시퀀드에 대한 값만 loss 계산
-    loss = loss[:, -1]
+    loss = loss[:, -1]  # (batch, max_seq_len) -> (batch,1)
     loss = torch.mean(loss)
     return loss
 
 
-def update_params(loss: torch.Tensor,
-                  model: nn.Module,
-                  optimizer: torch.optim.Optimizer,
-                  scheduler: torch.optim.lr_scheduler._LRScheduler,
-                  args):
+def update_params(
+    loss: torch.Tensor,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler._LRScheduler,
+    args,
+):
     loss.backward()
-    nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
+    nn.utils.clip_grad_norm_(
+        model.parameters(), args.clip_grad
+    )  # gradient 크기를 너무 커지지도 너무 작아지지도 않게 조절 (이전 gradient의 변화량 기준으로)
     if args.scheduler == "linear_warmup":
         scheduler.step()
     optimizer.step()
@@ -222,7 +404,7 @@ def update_params(loss: torch.Tensor,
 
 
 def save_checkpoint(state: dict, model_dir: str, model_filename: str) -> None:
-    """ Saves checkpoint to a given directory. """
+    """Saves checkpoint to a given directory."""
     save_path = os.path.join(model_dir, model_filename)
     logger.info("saving model as %s...", save_path)
     os.makedirs(model_dir, exist_ok=True)
@@ -233,9 +415,14 @@ def load_model(args):
     model_path = os.path.join(args.model_dir, args.model_name)
     logger.info("Loading Model from: %s", model_path)
     load_state = torch.load(model_path)
+    tmp_dict = OrderedDict()
+    for i, j in load_state["state_dict"].items():
+        name = i.replace("comb_proj", "")
+        tmp_dict[name] = j
     model = get_model(args)
 
     # load model state
-    model.load_state_dict(load_state["state_dict"], strict=True)
+    # model.load_state_dict(load_state["state_dict"], strict=True)
+    model.load_state_dict(tmp_dict, strict=False)
     logger.info("Successfully loaded model state from: %s", model_path)
     return model

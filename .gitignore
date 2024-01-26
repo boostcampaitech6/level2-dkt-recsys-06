@@ -1,7 +1,39 @@
-code/**/wandb
+/**/wandb
 
 code/**/__pycache__
 
 code/**/run.log
 
+<<<<<<< HEAD
 *.csv
+=======
+*.csv
+
+*.tsv
+
+*.tfevents
+
+/**/catboost_info
+
+*.json
+
+*.pkl
+
+*.pt
+
+*.npy
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+*.parquet
+=======
+*.parquet
+>>>>>>> wooksbaby
+=======
+*.parquet
+>>>>>>> wonhee
+=======
+*.parquet
+>>>>>>> wonhee
+>>>>>>> develop

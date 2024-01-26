@@ -13,17 +13,25 @@ from dkt.utils import get_logger, logging_conf
 logger = get_logger(logging_conf)
 
 
-def main(args: argparse.Namespace):
+def main(args):
     args.device = "cuda" if torch.cuda.is_available() else "cpu"
-    
+
     logger.info("Preparing data ...")
     preprocess = Preprocess(args=args)
-    preprocess.load_test_data(file_name=args.test_file_name)
+<<<<<<< HEAD
+<<<<<<< HEAD
+    preprocess.load_test_data(file_name=args.test_file_name, args=args)
+=======
+    preprocess.load_test_data(args, file_name=args.test_file_name)
+>>>>>>> wonhee
+=======
+    preprocess.load_test_data(args, file_name=args.test_file_name)
+>>>>>>> wonhee
     test_data: np.ndarray = preprocess.get_test_data()
-    
+
     logger.info("Loading Model ...")
     model: torch.nn.Module = trainer.load_model(args=args).to(args.device)
-    
+
     logger.info("Make Predictions & Save Submission ...")
     trainer.inference(args=args, test_data=test_data, model=model)
 

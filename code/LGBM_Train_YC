@@ -1,0 +1,538 @@
+{
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "id": "M_tLPVXsMpJZ"
+      },
+      "outputs": [],
+      "source": [
+        "import warnings\n",
+        "warnings.filterwarnings(\"ignore\")\n",
+        "\n",
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "import torch\n",
+        "import os\n",
+        "import random\n",
+        "\n",
+        "import yaml\n",
+        "from datetime import datetime\n",
+        "import pytz\n",
+        "\n",
+        "import lightgbm as LGBM\n",
+        "from sklearn.metrics import roc_auc_score\n",
+        "from sklearn.metrics import accuracy_score\n",
+        "from sklearn.model_selection import StratifiedGroupKFold\n",
+        "\n",
+        "import wandb\n",
+        "from wandb.lightgbm import wandb_callback, log_summary\n",
+        "from typing import TYPE_CHECKING, Callable\n",
+        "from wandb.sdk.lib import telemetry as wb_telemetry"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 2,
+      "metadata": {},
+      "outputs": [],
+      "source": [
+        "### 중요 ###\n",
+        "file_name=\"FE_v8.csv\"\n",
+        "Feature = ['Itemseq', 'SolvingTime', 'CumulativeTime', 'UserAvgSolvingTime',\n",
+        "       'Difference_SolvingTime_UserAvgSolvingTime', 'CumulativeItemCount',\n",
+        "       'Item_last7days', 'Item_last30days', 'CumulativeUserItemAcc',\n",
+        "       'PastItemCount', 'UserItemElapsed', 'ItemAcc',\n",
+        "       'AverageItemSolvingTime_Correct', 'AverageItemSolvingTime_Incorrect',\n",
+        "       'AverageItemSolvingTime', 'Difference_SolvingTime_AvgItemSolvingTime',\n",
+        "       'UserTagAvgSolvingTime', 'TagAcc', 'CumulativeUserTagAverageAcc',\n",
+        "       'CumulativeUserTagExponentialAverage', 'UserTagCount', 'UserTagElapsed',\n",
+        "       'PastTagSolvingTime', \n",
+        "       'TestAcc'\n",
+        "]\n",
+        "\n",
+        "Categorical_Feature = ['userID', 'assessmentItemID', 'testId', 'KnowledgeTag', \n",
+        "       'Month','DayOfWeek', 'TimeOfDay', 'WeekOfYear',\n",
+        "       'UserRecentTagAnswer', 'PreviousItemAnswer',\n",
+        "       'categorize_solvingTime', 'categorize_ItemAcc',\n",
+        "       'categorize_TagAcc', 'categorize_TestAcc',\n",
+        "       'categorize_CumulativeUserItemAcc',\n",
+        "       'categorize_CumulativeUserTagAverageAcc',\n",
+        "       'categorize_CumulativeUserTagExponentialAverage'\n",
+        "]\n",
+        "Feature = Feature + Categorical_Feature\n",
+        "\n",
+        "n_fold =5\n",
+        "seed = 42\n",
+        "data_dir =\"../../data/\"\n",
+        "output_dir =\"ouput/\"\n",
+        "sweep_config_path = '/data/ephemeral/home/level2-dkt-recsys-06/code/tabular/LGBMsweepconfig.yaml'"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# wandb_callback"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 3,
+      "metadata": {},
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "Create sweep with ID: heh0770v\n",
+            "Sweep URL: https://wandb.ai/yechance7/lightgbm-sweep/sweeps/heh0770v\n"
+          ]
+        }
+      ],
+      "source": [
+        "MINIMIZE_METRICS = [\n",
+        "    \"l1\",\n",
+        "    \"l2\",\n",
+        "    \"rmse\",\n",
+        "    \"mape\",\n",
+        "    \"huber\",\n",
+        "    \"fair\",\n",
+        "    \"poisson\",\n",
+        "    \"gamma\",\n",
+        "    \"binary_logloss\",\n",
+        "]\n",
+        "\n",
+        "MAXIMIZE_METRICS = [\"map\", \"auc\", \"average_precision\"]\n",
+        "\n",
+        "def set_seeds(seed):\n",
+        "    # 랜덤 시드를 설정하여 매 코드를 실행할 때마다 동일한 결과를 얻게 합니다.\n",
+        "    os.environ[\"PYTHONHASHSEED\"] = str(seed)\n",
+        "    random.seed(seed)\n",
+        "    np.random.seed(seed)\n",
+        "    torch.manual_seed(seed)\n",
+        "    torch.cuda.manual_seed(seed)\n",
+        "    torch.backends.cudnn.deterministic = True\n",
+        "\n",
+        "\n",
+        "def wandb_callback(log_params=True, define_metric=True) -> Callable:\n",
+        "    \"\"\"Automatically integrates LightGBM with wandb.\n",
+        "\n",
+        "    Arguments:\n",
+        "        log_params: (boolean) if True (default) logs params passed to lightgbm.train as W&B config\n",
+        "        define_metric: (boolean) if True (default) capture model performance at the best step, instead of the last step, of training in your `wandb.summary`\n",
+        "\n",
+        "    Passing `wandb_callback` to LightGBM will:\n",
+        "      - log params passed to lightgbm.train as W&B config (default).\n",
+        "      - log evaluation metrics collected by LightGBM, such as rmse, accuracy etc to Weights & Biases\n",
+        "      - Capture the best metric in `wandb.summary` when `define_metric=True` (default).\n",
+        "\n",
+        "    Use `log_summary` as an extension of this callback.\n",
+        "\n",
+        "    Example:\n",
+        "        ```python\n",
+        "        params = {\n",
+        "            'boosting_type': 'gbdt',\n",
+        "            'objective': 'regression',\n",
+        "            .\n",
+        "        }\n",
+        "        gbm = lgb.train(params,\n",
+        "                        lgb_train,\n",
+        "                        num_boost_round=10,\n",
+        "                        valid_sets=lgb_eval,\n",
+        "                        valid_names=('validation'),\n",
+        "                        callbacks=[wandb_callback()])\n",
+        "        ```\n",
+        "    \"\"\"\n",
+        "    def _define_metric(data: str, metric_name: str) -> None:\n",
+        "    \n",
+        "        \"\"\"Capture model performance at the best step.\n",
+        "        instead of the last step, of training in your `wandb.summary`\n",
+        "        \"\"\"\n",
+        "        if \"loss\" in str.lower(metric_name):\n",
+        "            wandb.define_metric(f\"{data}_{metric_name}\", summary=\"min\")\n",
+        "        elif str.lower(metric_name) in MINIMIZE_METRICS:\n",
+        "            wandb.define_metric(f\"{data}_{metric_name}\", summary=\"min\")\n",
+        "        elif str.lower(metric_name) in MAXIMIZE_METRICS:\n",
+        "            wandb.define_metric(f\"{data}_{metric_name}\", summary=\"max\")\n",
+        "            \n",
+        "    log_params_list: \"List[bool]\" = [log_params]\n",
+        "    define_metric_list: \"List[bool]\" = [define_metric]\n",
+        "\n",
+        "    def _init(env: \"CallbackEnv\") -> None:\n",
+        "        with wb_telemetry.context() as tel:\n",
+        "            tel.feature.lightgbm_wandb_callback = True\n",
+        "\n",
+        "        wandb.config.update(env.params)\n",
+        "        log_params_list[0] = False\n",
+        "\n",
+        "        if define_metric_list[0]:\n",
+        "            for i in range(len(env.evaluation_result_list)):\n",
+        "                data_type = env.evaluation_result_list[i][0]\n",
+        "                metric_name = env.evaluation_result_list[i][1]\n",
+        "                _define_metric(data_type, metric_name)\n",
+        "\n",
+        "    def _callback(env: \"CallbackEnv\") -> None:\n",
+        "        if log_params_list[0]:\n",
+        "            _init(env)\n",
+        "        # eval_results: \"Dict[str, Dict[str, List[Any]]]\" = {}\n",
+        "        # recorder = lightgbm.record_evaluation(eval_results)\n",
+        "        # recorder(env)\n",
+        "        eval_results = {x[0]:{x[1:][0]:x[1:][1:]} for x in env.evaluation_result_list}\n",
+        "\n",
+        "        for validation_key in eval_results.keys():\n",
+        "            for key in eval_results[validation_key].keys():\n",
+        "                 wandb.log(\n",
+        "                     {validation_key + \"_\" + key: eval_results[validation_key][key][0]},\n",
+        "                     commit=False,\n",
+        "                 )\n",
+        "        for item in eval_results:\n",
+        "            if len(item) == 4:\n",
+        "                wandb.log({f\"{item[0]}_{item[1]}\": item[2]}, commit=False)\n",
+        "\n",
+        "        # Previous log statements use commit=False. This commits them.\n",
+        "        wandb.log({\"iteration\": env.iteration}, commit=True)\n",
+        "\n",
+        "    return _callback\n",
+        "\n",
+        "# Time\n",
+        "korea_timezone = pytz.timezone('Asia/Seoul')\n",
+        "now_korea = datetime.now(korea_timezone)\n",
+        "now_date = now_korea.strftime('%Y%m%d')\n",
+        "now_hour = now_korea.strftime('%H%M%S')\n",
+        "save_time = f\"{now_date}_{now_hour}\"\n",
+        "\n",
+        "# 노트북의 이름 설정\n",
+        "os.environ['WANDB_NOTEBOOK_NAME'] = 'LGBM_Train.ipynb'\n",
+        "\n",
+        "# YAML 파일 로드\n",
+        "with open(sweep_config_path, 'r') as file:\n",
+        "    sweep_config = yaml.safe_load(file)\n",
+        "\n",
+        "# W&B 스위프트 설정\n",
+        "sweep_id = wandb.sweep(sweep=sweep_config, project=\"lightgbm-sweep\")\n",
+        "\n",
+        "# 시드 고정\n",
+        "set_seeds(seed)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# data loader"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 4,
+      "metadata": {},
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "### DATA LOAD ###\n"
+          ]
+        }
+      ],
+      "source": [
+        "class Dataset:\n",
+        "    def __init__(self, train: pd.DataFrame,Feature,Categorical_Feature):\n",
+        "        self.train = train\n",
+        "        self.feature = Feature\n",
+        "        self.Categorical_Feature = Categorical_Feature\n",
+        "    \n",
+        "\n",
+        "    def restruct_data(self) -> dict:\n",
+        "        # train과 test 분할\n",
+        "        data = {}\n",
+        "        df = self.train\n",
+        "        train = df[df[\"answerCode\"] >= 0]\n",
+        "        test = df[df[\"answerCode\"] == -1]\n",
+        "        data[\"train\"], data[\"test\"] = train, test\n",
+        "        return data\n",
+        "    \n",
+        "    \n",
+        "    def split_data(self) -> dict:\n",
+        "        \"\"\"\n",
+        "        data의 구성\n",
+        "        data['train'] : 전체 user_id에 대한 데이터(Test에 있는 User에 대해서는 이미 마지막으로 푼 문제 정보가 없음)\n",
+        "        data['train_split'] : 전체 user_id별 마지막으로 푼 문제를 제외한 데이터\n",
+        "        data['valid'] : 전체 user_id별 마지막으로 푼 문제에 대한 데이터\n",
+        "        \"\"\"\n",
+        "        data = self.restruct_data()\n",
+        "        \n",
+        "        train = data['train'].copy()\n",
+        "        train[\"is_valid\"] = [False] * train.shape[0]\n",
+        "        idx_last = train.drop_duplicates(subset=\"userID\", keep=\"last\").index\n",
+        "        train.loc[idx_last, \"is_valid\"] = True\n",
+        "\n",
+        "        train, valid = train[train[\"is_valid\"] == False], train[train[\"is_valid\"] == True]\n",
+        "        data['train'] = train.drop(\"is_valid\", axis=1)\n",
+        "        data['valid'] = valid.drop(\"is_valid\", axis=1)\n",
+        "\n",
+        "        print(f'{data[f\"train\"].shape[0]} train data')\n",
+        "        print(f'{data[f\"valid\"].shape[0]} valid data')\n",
+        "\n",
+        "        data[\"train_x\"] = data[\"train\"].drop(\"answerCode\", axis=1)\n",
+        "        data[\"train_y\"] = data[\"train\"][\"answerCode\"]\n",
+        "\n",
+        "        data[\"valid_x\"] = data[\"valid\"].drop(\"answerCode\", axis=1)\n",
+        "        data[\"valid_y\"] = data[\"valid\"][\"answerCode\"]\n",
+        "\n",
+        "        data[\"test\"] = data[\"test\"].drop(\"answerCode\", axis=1)\n",
+        "\n",
+        "        # as category: integer여도 범주형으로 취급 가능\n",
+        "        for state in [\"train_x\", \"valid_x\", \"test\"]:\n",
+        "            df = data[state]\n",
+        "                \n",
+        "            for feature in self.Categorical_Feature:\n",
+        "                df[feature] = df[feature].astype('category')\n",
+        "\n",
+        "        return data[\"train_x\"][self.feature], data[\"train_y\"], data[\"valid_x\"][self.feature], data[\"valid_y\"], data[\"test\"][self.feature]\n",
+        "\n",
+        "######################## DATA LOAD\n",
+        "print(\"### DATA LOAD ###\")\n",
+        "FE = pd.read_csv(data_dir + file_name)\n",
+        "print(\"Number of selected features:\", len(Feature))\n",
+        "\n",
+        "######################## DATA PREPROCESSING\n",
+        "print(\"### DATA PREPROCESSING ###\")\n",
+        "data = Dataset(FE,Feature,Categorical_Feature)\n",
+        "X_train, y_train, X_valid, y_valid, test = data.split_data()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# trainer"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {},
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "### TRAIN ###\n"
+          ]
+        },
+        {
+          "data": {
+            "text/html": [
+              "Changes to your `wandb` environment variables will be ignored because your `wandb` session has already started. For more information on how to modify your settings with `wandb.init()` arguments, please refer to <a href='https://wandb.me/wandb-init' target=\"_blank\">the W&B docs</a>."
+            ],
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        },
+        {
+          "name": "stderr",
+          "output_type": "stream",
+          "text": [
+            "\u001b[34m\u001b[1mwandb\u001b[0m: Currently logged in as: \u001b[33myechance7\u001b[0m (\u001b[33mboostcamp6-recsys6\u001b[0m). Use \u001b[1m`wandb login --relogin`\u001b[0m to force relogin\n"
+          ]
+        },
+        {
+          "data": {
+            "text/html": [
+              "Tracking run with wandb version 0.16.2"
+            ],
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        },
+        {
+          "data": {
+            "text/html": [
+              "Run data is saved locally in <code>/data/ephemeral/home/level2-dkt-recsys-06/code/tabular/wandb/run-20240124_081753-x1g68gsq</code>"
+            ],
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        },
+        {
+          "data": {
+            "text/html": [
+              "Syncing run <strong><a href='https://wandb.ai/boostcamp6-recsys6/lightgbm-sweep/runs/x1g68gsq' target=\"_blank\">restful-lake-1771</a></strong> to <a href='https://wandb.ai/boostcamp6-recsys6/lightgbm-sweep' target=\"_blank\">Weights & Biases</a> (<a href='https://wandb.me/run' target=\"_blank\">docs</a>)<br/>"
+            ],
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        },
+        {
+          "data": {
+            "text/html": [
+              " View project at <a href='https://wandb.ai/boostcamp6-recsys6/lightgbm-sweep' target=\"_blank\">https://wandb.ai/boostcamp6-recsys6/lightgbm-sweep</a>"
+            ],
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        },
+        {
+          "data": {
+            "text/html": [
+              " View run at <a href='https://wandb.ai/boostcamp6-recsys6/lightgbm-sweep/runs/x1g68gsq' target=\"_blank\">https://wandb.ai/boostcamp6-recsys6/lightgbm-sweep/runs/x1g68gsq</a>"
+            ],
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        }
+      ],
+      "source": [
+        "default_config = {\n",
+        "    \"num_leaves\": 10,  # 최소값 10\n",
+        "    \"learning_rate\": 0.0001,  # 최소값 0.0001\n",
+        "    \"max_depth\": -1,  # -1 (깊이 제한 없음)\n",
+        "    \"min_data_in_leaf\": 20,  # 최소값 20\n",
+        "    \"feature_fraction\": 0.6,  # 최소값 0.6\n",
+        "    \"bagging_fraction\": 0.6,  # 최소값 0.6\n",
+        "    \"bagging_freq\": 0,  # 최소값 0\n",
+        "    \"lambda_l1\": 0.0,  # 최소값 0.0\n",
+        "    \"lambda_l2\": 0.0,  # 최소값 0.0\n",
+        "    \"cat_smooth\": 10,  # 최소값 10\n",
+        "}\n",
+        "\n",
+        "def train():\n",
+        "    auc = 0\n",
+        "    acc =0\n",
+        "    test_preds = np.zeros(len(test))\n",
+        "    \n",
+        "    wandb.init(project=f\"lightgbm-sweep\", config=default_config, entity=\"boostcamp6-recsys6\")\n",
+        "    wandb.run.name = f\"{save_time} yechan\"\n",
+        "\n",
+        "    current_params = {\n",
+        "        \"objective\": \"binary\",\n",
+        "        \"metric\": [\"auc\"],\n",
+        "        \"device\": \"cpu\",\n",
+        "        \"num_leaves\": wandb.config.num_leaves,\n",
+        "        \"learning_rate\": wandb.config.learning_rate,\n",
+        "        \"max_depth\": wandb.config.max_depth,\n",
+        "        \"min_data_in_leaf\": wandb.config.min_data_in_leaf,\n",
+        "        \"feature_fraction\": wandb.config.feature_fraction,\n",
+        "        \"bagging_fraction\": wandb.config.bagging_fraction,\n",
+        "        \"bagging_freq\": wandb.config.bagging_freq,\n",
+        "        \"lambda_l1\": wandb.config.lambda_l1,\n",
+        "        \"lambda_l2\": wandb.config.lambda_l2,\n",
+        "        \"cat_smooth\": wandb.config.cat_smooth,\n",
+        "    }\n",
+        "    lgb_train = LGBM.Dataset(X_train, y_train)\n",
+        "    lgb_valid = LGBM.Dataset(X_valid, y_valid)\n",
+        "    \n",
+        "    print(f\"lgb_train{lgb_train}\")\n",
+        "    \n",
+        "    print(f\"lgb_valid{lgb_valid}\")\n",
+        "    \n",
+        "    model = LGBM.train(\n",
+        "        current_params,\n",
+        "        lgb_train,\n",
+        "        valid_sets=[lgb_train, lgb_valid],\n",
+        "        num_boost_round=500,\n",
+        "        callbacks=[\n",
+        "            wandb_callback(log_params=True, define_metric=True),\n",
+        "            LGBM.early_stopping(30),\n",
+        "        ],\n",
+        "         categorical_feature= Categorical_Feature,\n",
+        "    )\n",
+        "    \n",
+        "\n",
+        "    \n",
+        "    # Prediction\n",
+        "    y_pred_proba = model.predict_proba(X_valid)[:, 1]\n",
+        "    y_pred_binary = [1 if pred > 0.5 else 0 for pred in y_pred_proba]\n",
+        "\n",
+        "    # Calculate Accuracy and AUC\n",
+        "    acc = accuracy_score(y_valid, y_pred_binary)\n",
+        "    auc = roc_auc_score(y_valid, y_pred_proba)\n",
+        "    print(f\"VALID AUC : {auc} ACC : {acc}\\n\")\n",
+        "\n",
+        "    test_preds += model.predict_proba(test)[:, 1]\n",
+        "    wandb.log({\"auc\": auc, \"accuracy\": acc})\n",
+        "            \n",
+        "    write_path = os.path.join(\n",
+        "        output_dir,\n",
+        "        f\"auc:{auc} acc:{acc} LGBM_{save_time}.csv\",\n",
+        "    )\n",
+        "    \n",
+        "\n",
+        "    if not os.path.exists(output_dir):\n",
+        "        os.makedirs(output_dir)  \n",
+        "    with open(write_path, \"w\", encoding=\"utf8\") as w:\n",
+        "        print(\"writing prediction : {}\".format(write_path))\n",
+        "        w.write(\"id,prediction\\n\")\n",
+        "        for id, p in enumerate(test_preds):\n",
+        "            w.write(\"{},{}\\n\".format(id, p))\n",
+        "\n",
+        "    get_feature_importance(model) \n",
+        "    print( \"LGBM\" + \"_\" + save_time + \" Submission file has been made\" )\n",
+        "\n",
+        "\n",
+        "def get_feature_importance(model, feature_names, model_type):\n",
+        "        importance = model.feature_importances_\n",
+        "\n",
+        "        feature_importance = np.array(importance)\n",
+        "        feature_names = np.array(feature_names)\n",
+        "    \n",
+        "        # DataFrame 생성하고 정렬\n",
+        "        fi_df = pd.DataFrame({'Feature Names': feature_names, 'Feature Importance': feature_importance})\n",
+        "        fi_df = fi_df.sort_values(by='Feature Importance', ascending=False)\n",
+        "\n",
+        "        # Print the results\n",
+        "        print(f\"{model_type} Feature Importance:\")\n",
+        "        print(fi_df)\n",
+        "\n",
+        "######################## TRAIN\n",
+        "print(\"### TRAIN ###\")\n",
+        "wandb.agent(sweep_id, train)"
+      ]
+    }
+  ],
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "toc_visible": true
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.8.18"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
