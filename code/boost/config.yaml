@@ -1,0 +1,63 @@
+program: main.py
+name: boosting_sweep
+description: boosting model sweep
+project: level2-boost
+entity: boostcamp6-recsys6
+method: bayes
+metric:
+  name: train_auc
+  goal: maximize
+parameters:
+  model:
+    values: ['CAT'] #, 'XG', 'LGBM']
+  feats:
+    values: [
+      'categorize_solvingTime categorize_CorrectnessRate categorize_TagAccuracy', 
+      'categorize_solvingTime categorize_CorrectnessRate',
+      'categorize_solvingTime categorize_TagAccuracy',
+      'categorize_CorrectnessRate categorize_TagAccuracy',
+      'categorize_solvingTime',
+      'categorize_CorrectnessRate',
+      'categorize_TagAccuracy'
+    ]
+  ############ 공통 parameter ############
+  n_estimators:   # 반복 트리 개수 (약학습기 개수)  default: 100
+    value: 3000
+  random_state:   # random seed   default: 42
+    value: 42
+  learning_rate:  # 학습률          default: 0.1
+    min: 0.001
+    max: 0.1
+  max_depth:      # 트리 최대 깊이 (feature가 많을 시 크게)   default: 10
+    min: 3
+    max: 10
+  reg_lambda:     # L2 regularization   default: 0.0
+    min: 0.0
+    max: 0.2
+  subsample:      # 데이터 샘플링 비율      default: 1.0
+    min: 0.7
+    max: 1.0
+  early_stopping_rounds:
+    value: 100
+  max_leaves:     # 최대 leaf 개수        default: 31
+    min: 5
+    max: 50
+  
+  ########### lgbm & catboost ###########
+  min_data_in_leaf: # 한 leaf의 최소 data 수      default: 20
+    min: 3
+    max: 50
+
+  ################# lgbm #################
+  feature_fraction: # 학습할 때마다 선택하는 feature 비율   default: 1.0
+    min: 0.1
+    max: 1.0
+  bagging_freq:     # bagging 빈도              default: 0
+    min: 1
+    max: 20
+  
+  ############### xgboost ###############
+
+
+  ############## catboost ##############
+    

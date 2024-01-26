@@ -21,7 +21,11 @@ code/**/run.log
 *.npy
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 *.parquet
 =======
 *.parquet
 >>>>>>> wooksbaby
+=======
+*.parquet
+>>>>>>> wonhee

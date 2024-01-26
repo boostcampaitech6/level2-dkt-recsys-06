@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import torch
+from collections import OrderedDict
 from torch import nn
 from torch.nn.functional import sigmoid
 import wandb
@@ -11,7 +12,11 @@ import pickle
 from .criterion import get_criterion
 from .dataloader import get_loaders
 from .metric import get_metric
+<<<<<<< HEAD
 from .model import LSTM, LSTMATTN, BERT, LastQuery, LastQuery2
+=======
+from .model import LSTM, LSTMATTN, BERT, LastQuery
+>>>>>>> wonhee
 from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .utils import get_logger, logging_conf
@@ -20,6 +25,7 @@ from .utils import get_logger, logging_conf
 logger = get_logger(logger_conf=logging_conf)
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
     train_loader, valid_loader = get_loaders(
@@ -33,6 +39,17 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, 
     train_loader, valid_loader = get_loaders(
         args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
 >>>>>>> wooksbaby
+=======
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module): # , kfold: int):
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
+    train_loader, valid_loader = get_loaders(
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
+>>>>>>> wonhee
     )
 
     # For warmup scheduler which uses step interval
@@ -61,10 +78,14 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, 
 
         # VALID
 <<<<<<< HEAD
+<<<<<<< HEAD
         auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
 =======
         auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
 >>>>>>> wooksbaby
+=======
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
+>>>>>>> wonhee
 
         wandb.log(
             dict(
@@ -74,6 +95,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, 
                 train_acc_epoch=train_acc,
                 valid_auc_epoch=auc,
                 valid_acc_epoch=acc,
+<<<<<<< HEAD
 <<<<<<< HEAD
             )
         )
@@ -109,15 +131,31 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, 
             best_val_loss = loss
 >>>>>>> wooksbaby
             # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+=======
+                valid_loss_epoch=loss,
+            )
+        )
+
+        # if auc > best_auc:
+        #     best_auc = auc
+        if loss < best_val_loss:
+            best_val_loss = loss
+        #     # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+>>>>>>> wonhee
             model_to_save = model.module if hasattr(model, "module") else model
             save_checkpoint(
                 state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
                 model_dir=args.model_dir,
 <<<<<<< HEAD
+<<<<<<< HEAD
                 model_filename="best_model.pt",
 =======
                 model_filename=f"{current_time}_fold{n_fold}.pt",
 >>>>>>> wooksbaby
+=======
+                # model_filename= f"best_model_{kfold}.pt",
+                model_filename= "best_model.pt",
+>>>>>>> wonhee
             )
             early_stopping_counter = 0
         else:
@@ -211,10 +249,19 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
     model.eval()
+<<<<<<< HEAD
 
     with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
         dict_graph = pickle.load(file)
+=======
+>>>>>>> wonhee
     _, test_loader = get_loaders(args=args, train=None, valid=test_data, dict_graph=dict_graph)
 
     total_preds = []
@@ -258,6 +305,7 @@ def get_model(args) -> nn.Module:
             "lstmattn": LSTMATTN,
             "bert": BERT,
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             "lastquery":LastQuery,
             'lastquery2':LastQuery2,
@@ -266,6 +314,10 @@ def get_model(args) -> nn.Module:
         }.get(
             model_name
         )(**model_args)
+=======
+            "lastquery": LastQuery,
+        }.get(model_name)(**model_args)
+>>>>>>> wonhee
     except KeyError:
         logger.warn("No model name %s found", model_name)
     except Exception as e:
@@ -320,9 +372,14 @@ def load_model(args):
     model_path = os.path.join(args.model_dir, args.model_name)
     logger.info("Loading Model from: %s", model_path)
     load_state = torch.load(model_path)
+    tmp_dict = OrderedDict()
+    for i, j in load_state["state_dict"].items():
+        name = i.replace("comb_proj", "")
+        tmp_dict[name] = j
     model = get_model(args)
 
     # load model state
-    model.load_state_dict(load_state["state_dict"], strict=True)
+    # model.load_state_dict(load_state["state_dict"], strict=True)
+    model.load_state_dict(tmp_dict, strict=False)
     logger.info("Successfully loaded model state from: %s", model_path)
     return model

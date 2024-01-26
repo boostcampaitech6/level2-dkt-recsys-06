@@ -62,6 +62,10 @@ class LightGCN(torch.nn.Module):
         **kwargs (optional): Additional arguments of the underlying
             :class:`~torch_geometric.nn.conv.LGConv` layers.
     """
+<<<<<<< HEAD
+=======
+
+>>>>>>> wonhee
     def __init__(
         self,
         args,
@@ -76,6 +80,7 @@ class LightGCN(torch.nn.Module):
         self.num_nodes = num_nodes
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
+<<<<<<< HEAD
         
         # self.n_users = 
         # self.n_items = 
@@ -83,6 +88,17 @@ class LightGCN(torch.nn.Module):
         # 1) alpha 값 learnable
         if alpha is None:
             self.alpha = nn.Parameter(torch.full((num_layers + 1,), 1.0 / (num_layers + 1)))
+=======
+
+        # self.n_users =
+        # self.n_items =
+
+        # 1) alpha 값 learnable
+        if alpha is None:
+            self.alpha = nn.Parameter(
+                torch.full((num_layers + 1,), 1.0 / (num_layers + 1))
+            )
+>>>>>>> wonhee
 
         # if isinstance(alpha, Tensor):
         #     assert alpha.size(0) == num_layers + 1
@@ -90,6 +106,7 @@ class LightGCN(torch.nn.Module):
         #     alpha = torch.tensor([alpha] * (num_layers + 1))
         # self.register_buffer('alpha', alpha)
 
+<<<<<<< HEAD
         self.user_embedding = Embedding(n_users, embedding_dim) # user embedding
         self.item_embedding = Embedding(n_items, embedding_dim) # item embedding
         self.convs = ModuleList([LGConv(**kwargs) for _ in range(num_layers)])
@@ -97,6 +114,15 @@ class LightGCN(torch.nn.Module):
         self.fc1 = nn.Linear(embedding_dim*2, embedding_dim//4)
         self.activation = nn.LeakyReLU()
         self.fc2 = nn.Linear(embedding_dim//4,1)
+=======
+        self.user_embedding = Embedding(n_users, embedding_dim)  # user embedding
+        self.item_embedding = Embedding(n_items, embedding_dim)  # item embedding
+        self.convs = ModuleList([LGConv(**kwargs) for _ in range(num_layers)])
+
+        self.fc1 = nn.Linear(embedding_dim * 2, embedding_dim // 4)
+        self.activation = nn.LeakyReLU()
+        self.fc2 = nn.Linear(embedding_dim // 4, 1)
+>>>>>>> wonhee
 
         self.reset_parameters()
 
@@ -113,8 +139,13 @@ class LightGCN(torch.nn.Module):
     ) -> Tensor:
         r"""Returns the embedding of nodes in the graph."""
         x = self.embedding.weight
+<<<<<<< HEAD
         
         print('convolution shape:',x.shape)
+=======
+
+        print("convolution shape:", x.shape)
+>>>>>>> wonhee
         out = x * self.alpha[0]
 
         # 1) alpha를 learnable한 parameter로 바꾸기
@@ -167,8 +198,12 @@ class LightGCN(torch.nn.Module):
         # out_linear = (out_src * out_dst).sum(dim=-1)
         # return (out_src * out_dst).sum(dim=-1) # item과 user의 임베딩을 같은 선 상에서 유사하게 만듦
         # return 0.5+out_mlp.squeeze(1) + 0.5*out_linear # [num_data,1] -> [num_data]
+<<<<<<< HEAD
         return out_src, out_dst # end-to-end
 
+=======
+        return out_src, out_dst  # end-to-end
+>>>>>>> wonhee
 
     def predict_link(
         self,
@@ -238,8 +273,12 @@ class LightGCN(torch.nn.Module):
 
         return top_index
 
+<<<<<<< HEAD
     def link_pred_loss(self, pred: Tensor, edge_label: Tensor,
                        **kwargs) -> Tensor:
+=======
+    def link_pred_loss(self, pred: Tensor, edge_label: Tensor, **kwargs) -> Tensor:
+>>>>>>> wonhee
         r"""Computes the model loss for a link prediction objective via the
         :class:`torch.nn.BCEWithLogitsLoss`.
 
@@ -288,8 +327,15 @@ class LightGCN(torch.nn.Module):
         return loss_fn(pos_edge_rank, neg_edge_rank, emb)
 
     def __repr__(self) -> str:
+<<<<<<< HEAD
         return (f'{self.__class__.__name__}({self.num_nodes}, '
                 f'{self.embedding_dim}, num_layers={self.num_layers})')
+=======
+        return (
+            f"{self.__class__.__name__}({self.num_nodes}, "
+            f"{self.embedding_dim}, num_layers={self.num_layers})"
+        )
+>>>>>>> wonhee
 
 
 class BPRLoss(_Loss):
@@ -313,15 +359,25 @@ class BPRLoss(_Loss):
         **kwargs (optional): Additional arguments of the underlying
             :class:`torch.nn.modules.loss._Loss` class.
     """
+<<<<<<< HEAD
     __constants__ = ['lambda_reg']
+=======
+    __constants__ = ["lambda_reg"]
+>>>>>>> wonhee
     lambda_reg: float
 
     def __init__(self, lambda_reg: float = 0, **kwargs):
         super().__init__(None, None, "sum", **kwargs)
         self.lambda_reg = lambda_reg
 
+<<<<<<< HEAD
     def forward(self, positives: Tensor, negatives: Tensor,
                 parameters: Tensor = None) -> Tensor:
+=======
+    def forward(
+        self, positives: Tensor, negatives: Tensor, parameters: Tensor = None
+    ) -> Tensor:
+>>>>>>> wonhee
         r"""Compute the mean Bayesian Personalized Ranking (BPR) loss.
 
         .. note::
@@ -344,4 +400,8 @@ class BPRLoss(_Loss):
             regularization = self.lambda_reg * parameters.norm(p=2).pow(2)
             regularization = regularization / positives.size(0)
 
+<<<<<<< HEAD
         return -log_prob + regularization
+=======
+        return -log_prob + regularization
+>>>>>>> wonhee

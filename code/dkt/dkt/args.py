@@ -9,7 +9,7 @@ def parse_args():
     parser.add_argument("--device", default="cpu", type=str, help="cpu or gpu")
     parser.add_argument(
         "--data_dir",
-        default="../../data/",
+        default="/data/ephemeral/home/level2-dkt-recsys-06/data/",
         type=str,
         help="data directory",
     )
@@ -18,10 +18,14 @@ def parse_args():
     )
     parser.add_argument(
 <<<<<<< HEAD
+<<<<<<< HEAD
         "--file_name", default="augment.csv", type=str, help="train file name"
 =======
         "--file_name", default="FE_v8.csv", type=str, help="train file name"
 >>>>>>> wooksbaby
+=======
+        "--file_name", default="FE_v7.csv", type=str, help="train file name"
+>>>>>>> wonhee
     )
     parser.add_argument(
         "--model_dir", default="models/", type=str, help="model directory"
@@ -33,7 +37,11 @@ def parse_args():
         "--output_dir", default="../submit/", type=str, help="output directory"
     )
     parser.add_argument(
+<<<<<<< HEAD
         "--test_file_name", default="FE_v8_test.csv", type=str, help="test file name"
+=======
+        "--test_file_name", default="test_data_.csv", type=str, help="test file name"
+>>>>>>> wonhee
     )
 
     parser.add_argument(
@@ -45,7 +53,7 @@ def parse_args():
     parser.add_argument(
         "--hidden_dim", default=64, type=int, help="hidden dimension size"
     )
-    parser.add_argument("--n_layers", default=2, type=int, help="number of layers")
+    parser.add_argument("--n_layers", default=1, type=int, help="number of layers")
     parser.add_argument("--n_heads", default=2, type=int, help="number of heads")
     parser.add_argument("--drop_out", default=0.2, type=float, help="drop out rate")
 
@@ -71,14 +79,19 @@ def parse_args():
     parser.add_argument(
         "--submission_name",
 <<<<<<< HEAD
+<<<<<<< HEAD
         default="dkt_submission.csv",
 =======
         default="dkt_submission_21.csv",
 >>>>>>> wooksbaby
+=======
+        default="lastquery.csv",
+>>>>>>> wonhee
         type=str,
         help="submission file name",
     )
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
     ### graph embedding
@@ -100,6 +113,33 @@ def parse_args():
     parser.add_argument("--Tfixup", default='True', type=strtobool, help='initialize parameters?')
 
 >>>>>>> wooksbaby
+=======
+    ### graph embedding
+    parser.add_argument(
+        "--graph_embed", default="False", type=strtobool, help="use graph embedding?"
+    )
+
+    ### sliding window
+    parser.add_argument(
+        "--window", default="False", type=strtobool, help="use slidding window?"
+    )
+    parser.add_argument(
+        "--stride", default=1, type=int, help="choose stride if slide windows"
+    )
+    parser.add_argument(
+        "--shuffle", default="False", type=strtobool, help="use slidding window?"
+    )
+    parser.add_argument("--shuffle_n", default=1, type=int, help="use slidding window?")
+
+    ### kfold
+    parser.add_argument("--kfolds", default=0, type=int, help="kfold?")
+
+    ### random sampling
+    parser.add_argument(
+        "--n_choice", default=0, type=int, help="random sampling in augmentation?"
+    )
+
+>>>>>>> wonhee
     ### feature engineering
     # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형
 
@@ -109,7 +149,11 @@ def parse_args():
         "--base_cat_feats",
         nargs="+",
 <<<<<<< HEAD
+<<<<<<< HEAD
         default=["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"],
+=======
+        default=["userID", "answerCode", "assessmentItemID", "testId", "KnowledgeTag"],
+>>>>>>> wonhee
         help="기본 범주형 변수",
 =======
         default=["userID", "answerCode", "assessmentItemID", "testId", "KnowledgeTag"],
@@ -118,11 +162,22 @@ def parse_args():
     )
 
     # 실험 대상
-    parser.add_argument("--new_num_feats", nargs="+", default=[], help="새로운 수치형 변수")
-    parser.add_argument("--new_cat_feats", nargs="+", default=[], help="새로운 범주형 변수")
+    parser.add_argument("--new_num_feats", nargs="+", default=[""], help="새로운 수치형 변수")
+    parser.add_argument("--new_cat_feats", nargs="+", default=[""], help="새로운 범주형 변수")
 
     args = parser.parse_args()
-    args.new_num_feats = args.new_num_feats[0].split(' ')
+
+    if len(args.new_num_feats) == 1:
+        if args.new_num_feats[0] == "":
+            args.new_num_feats = []
+        else:
+            args.new_num_feats = args.new_num_feats[0].split(" ")
+    if len(args.new_cat_feats) == 1:
+        if args.new_cat_feats[0] == "":
+            args.new_cat_feats = []
+        else:
+            args.new_cat_feats = args.new_cat_feats[0].split(" ")
+
     args.num_feats = args.base_num_feats + args.new_num_feats
     args.cat_feats = args.base_cat_feats + args.new_cat_feats
 

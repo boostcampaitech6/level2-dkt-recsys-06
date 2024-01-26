@@ -42,4 +42,8 @@ logging_conf = {  # only used when 'user_wandb==False'
         },
     },
     "root": {"level": "INFO", "handlers": ["console", "file_handler"]},
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> wonhee
