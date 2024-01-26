@@ -19,7 +19,11 @@ def main(args):
     logger.info("Preparing data ...")
     preprocess = Preprocess(args=args)
 <<<<<<< HEAD
+<<<<<<< HEAD
     preprocess.load_test_data(file_name=args.test_file_name, args=args)
+=======
+    preprocess.load_test_data(args, file_name=args.test_file_name)
+>>>>>>> wonhee
 =======
     preprocess.load_test_data(args, file_name=args.test_file_name)
 >>>>>>> wonhee

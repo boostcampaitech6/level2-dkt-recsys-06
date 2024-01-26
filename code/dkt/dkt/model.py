@@ -4,8 +4,11 @@ from transformers.models.bert.modeling_bert import BertConfig, BertEncoder, Bert
 import pickle
 import numpy as np
 <<<<<<< HEAD
+<<<<<<< HEAD
 import copy
 import re
+=======
+>>>>>>> wonhee
 =======
 >>>>>>> wonhee
 
@@ -51,6 +54,7 @@ class ModelBase(nn.Module):
         # Concatentaed Embedding Linear Projection
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.comb_proj = nn.Linear(intd * (len(args.cat_feats) - 1), dim_cat)
 =======
         if self.args.graph_embed:
@@ -62,6 +66,8 @@ class ModelBase(nn.Module):
         self.comb_proj = nn.Linear(self.comb_proj_dim, dim_cat)
 >>>>>>> wooksbaby
 =======
+=======
+>>>>>>> wonhee
         if self.args.graph_embed:
             self.comb_proj_dim = intd * (len(self.args.cat_feats) - 2) + 64  # graph
         else:
@@ -69,6 +75,9 @@ class ModelBase(nn.Module):
 
         print(self.comb_proj_dim, dim_cat)
         self.comb_proj = nn.Linear(self.comb_proj_dim, dim_cat)
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
         self.layer_norm_cat = nn.LayerNorm(dim_cat)
 
@@ -99,11 +108,16 @@ class ModelBase(nn.Module):
         batch_size = interaction.size(0)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         # Embedding
 =======
         
         ## 1) 범주형변수 Embedding
 >>>>>>> wooksbaby
+=======
+
+        ## 1) 범주형변수 Embedding
+>>>>>>> wonhee
 =======
 
         ## 1) 범주형변수 Embedding
@@ -146,9 +160,17 @@ class ModelBase(nn.Module):
         else:  # just embedding
             embed = torch.cat([embed, embed_question], dim=2)
 
+        # graph embedding
+        if self.args.graph_embed:
+            embed_graph = data["embed_graph"]
+            embed = torch.cat([embed, embed_graph], dim=2)
+        else:  # just embedding
+            embed = torch.cat([embed, embed_question], dim=2)
+
         X = self.comb_proj(embed)  # embedding linear projection
         X = self.layer_norm_cat(X)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         # 수치형 변수
@@ -156,6 +178,9 @@ class ModelBase(nn.Module):
 
         ## 2) 수치형 변수
 >>>>>>> wooksbaby
+=======
+        ## 2) 수치형 변수
+>>>>>>> wonhee
 =======
         ## 2) 수치형 변수
 >>>>>>> wonhee
@@ -279,10 +304,14 @@ class BERT(ModelBase):
     ):
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         super().__init__(hidden_dim, n_layers, n_tests, n_questions, n_tags)
 =======
         super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
 >>>>>>> wooksbaby
+=======
+        super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
+>>>>>>> wonhee
 =======
         super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
 >>>>>>> wonhee
@@ -298,6 +327,7 @@ class BERT(ModelBase):
         )
         self.encoder = BertModel(self.config)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     def forward(self, test, question, tag, correct, mask, interaction):
@@ -341,6 +371,21 @@ class BERT(ModelBase):
 
         encoded_layers = self.encoder(inputs_embeds=X, attention_mask=data["mask"])
 >>>>>>> wonhee
+=======
+    def forward(self, data):  # , test, question, tag, correct, mask, interaction):
+        X, batch_size = super().forward(data=data)
+
+        # X, batch_size = super().forward(
+        #     test=test,
+        #     question=question,
+        #     tag=tag,
+        #     correct=correct,
+        #     mask=mask,
+        #     interaction=interaction,
+        # )
+
+        encoded_layers = self.encoder(inputs_embeds=X, attention_mask=data["mask"])
+>>>>>>> wonhee
         out = encoded_layers[0]
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
         out = self.fc(out).view(batch_size, -1)
@@ -348,7 +393,10 @@ class BERT(ModelBase):
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> wonhee
 =======
 >>>>>>> wonhee
 class Feed_Forward_block(nn.Module):
@@ -356,6 +404,10 @@ class Feed_Forward_block(nn.Module):
     out =  Relu( M_out*w1 + b1) *w2 + b2
     """
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> wonhee
 =======
 
 >>>>>>> wonhee
@@ -365,7 +417,11 @@ class Feed_Forward_block(nn.Module):
         self.layer2 = nn.Linear(in_features=dim_ff, out_features=dim_ff)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def forward(self,ffn_in):
+=======
+    def forward(self, ffn_in):
+>>>>>>> wonhee
 =======
     def forward(self, ffn_in):
 >>>>>>> wonhee
@@ -375,6 +431,7 @@ class Feed_Forward_block(nn.Module):
         return x
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 class LastQuery(ModelBase):
@@ -388,6 +445,8 @@ class LastQuery(ModelBase):
                 **kwargs):
         
 =======
+=======
+>>>>>>> wonhee
 class LastQuery(ModelBase):
     def __init__(
         self,
@@ -399,6 +458,9 @@ class LastQuery(ModelBase):
         n_tags: int = 913,
         **kwargs,
     ):
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
         super().__init__(args, hidden_dim, n_layers, n_tests, n_questions, n_tags)
         self.args = args
@@ -406,11 +468,14 @@ class LastQuery(ModelBase):
 
         if self.args.num_feats:
 <<<<<<< HEAD
+<<<<<<< HEAD
             self.hidden_dim = 2*self.args.hidden_dim
         else:
             self.hidden_dim = self.args.hidden_dim
 
 =======
+=======
+>>>>>>> wonhee
             self.hidden_dim = 2 * self.args.hidden_dim
         else:
             self.hidden_dim = self.args.hidden_dim
@@ -426,12 +491,16 @@ class LastQuery(ModelBase):
         # embedding combination projection
         # self.comb_proj = nn.Linear((self.hidden_dim//3)*4, self.hidden_dim)
 
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
         # 기존 keetar님 솔루션에서는 Positional Embedding은 사용되지 않습니다
         # 하지만 사용 여부는 자유롭게 결정해주세요 :)
         # self.embedding_position = nn.Embedding(self.args.max_seq_len, self.hidden_dim)
 
         # Encoder
+<<<<<<< HEAD
 <<<<<<< HEAD
         self.query = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
         self.key = nn.Linear(in_features=self.hidden_dim, out_features=self.hidden_dim)
@@ -440,6 +509,8 @@ class LastQuery(ModelBase):
         self.attn = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.args.n_heads)
         self.mask = None # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
 =======
+=======
+>>>>>>> wonhee
         self.query = nn.Linear(
             in_features=self.hidden_dim, out_features=self.hidden_dim
         )
@@ -452,6 +523,9 @@ class LastQuery(ModelBase):
             embed_dim=self.hidden_dim, num_heads=self.args.n_heads
         )
         self.mask = None  # last query에서는 필요가 없지만 수정을 고려하여서 넣어둠
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
         self.ffn = Feed_Forward_block(self.hidden_dim)
 
@@ -460,6 +534,7 @@ class LastQuery(ModelBase):
 
         # LSTM
         self.lstm = nn.LSTM(
+<<<<<<< HEAD
 <<<<<<< HEAD
             self.hidden_dim,
             self.hidden_dim,
@@ -533,6 +608,8 @@ class LastQuery(ModelBase):
         self.load_state_dict(temp_state_dict)
 
 =======
+=======
+>>>>>>> wonhee
             self.hidden_dim, self.hidden_dim, self.args.n_layers, batch_first=True
         )
 
@@ -540,6 +617,9 @@ class LastQuery(ModelBase):
         self.fc = nn.Linear(self.hidden_dim, 1)
 
         self.activation = nn.Sigmoid()
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
     def get_mask(self, seq_len, index, batch_size):
@@ -562,13 +642,19 @@ class LastQuery(ModelBase):
 
         # batchsize * n_head 수만큼 각 mask를 반복하여 증가시킨다
 <<<<<<< HEAD
+<<<<<<< HEAD
         mask = mask.repeat(1, self.args.n_heads).view(batch_size*self.args.n_heads, -1, seq_len)
         return mask.masked_fill(mask==1, float('-inf'))
 =======
+=======
+>>>>>>> wonhee
         mask = mask.repeat(1, self.args.n_heads).view(
             batch_size * self.args.n_heads, -1, seq_len
         )
         return mask.masked_fill(mask == 1, float("-inf"))
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
     def get_pos(self, seq_len):
@@ -576,6 +662,7 @@ class LastQuery(ModelBase):
         return torch.arange(seq_len).unsqueeze(0)
 
     def init_hidden(self, batch_size):
+<<<<<<< HEAD
 <<<<<<< HEAD
         h = torch.zeros(
             self.args.n_layers,
@@ -588,15 +675,21 @@ class LastQuery(ModelBase):
             batch_size,
             self.hidden_dim)
 =======
+=======
+>>>>>>> wonhee
         h = torch.zeros(self.args.n_layers, batch_size, self.hidden_dim)
         h = h.to(self.device)
 
         c = torch.zeros(self.args.n_layers, batch_size, self.hidden_dim)
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
         c = c.to(self.device)
 
         return (h, c)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     def forward(self, data):
@@ -604,10 +697,15 @@ class LastQuery(ModelBase):
         batch_size = data['interaction'].size(0)
         seq_len = data['interaction'].size(1)
 =======
+=======
+>>>>>>> wonhee
     def forward(self, data):
         # test, question, tag, _, mask, interaction, index = input
         batch_size = data["interaction"].size(0)
         seq_len = data["interaction"].size(1)
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
         embed, batch_size = super().forward(data=data)
@@ -632,16 +730,22 @@ class LastQuery(ModelBase):
 
         ####################### ENCODER #####################
 <<<<<<< HEAD
+<<<<<<< HEAD
         q = self.query(embed)[:, -1:, :].permute(1, 0, 2)
 
         # 이 3D gathering은 머리가 아픕니다. 잠시 머리를 식히고 옵니다.
         # q = torch.gather(q, 1, index.repeat(1, self.hidden_dim).unsqueeze(1)) # 마지막 쿼리 빼고 다 가리기
 =======
+=======
+>>>>>>> wonhee
         q = self.query(embed)[:, -1:, :]
 
         # 이 3D gathering은 머리가 아픕니다. 잠시 머리를 식히고 옵니다.
         # q = torch.gather(q, 1, index.repeat(1, self.hidden_dim).unsqueeze(1)) # 마지막 쿼리 빼고 다 가리기
         q = q.permute(1, 0, 2)
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
         k = self.key(embed).permute(1, 0, 2)
@@ -667,6 +771,7 @@ class LastQuery(ModelBase):
         ###################### LSTM #####################
         hidden = self.init_hidden(batch_size)
         out, hidden = self.lstm(out, hidden)
+<<<<<<< HEAD
 <<<<<<< HEAD
         # out, hidden = self.gru(out, hidden[0])
 
@@ -985,6 +1090,8 @@ class Saint(nn.Module):
 
         return preds
 =======
+=======
+>>>>>>> wonhee
 
         ###################### DNN #####################
         out = out.contiguous().view(batch_size, -1, self.hidden_dim)
@@ -993,4 +1100,7 @@ class Saint(nn.Module):
         # preds = self.activation(out).view(batch_size, -1)
 
         return out.view(batch_size, -1)
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee

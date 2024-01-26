@@ -4,6 +4,7 @@ import time
 import numpy as np
 import pandas as pd
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 from boost.args import parse_args
@@ -141,6 +142,8 @@ def main(args):
     print(args.model + " " + save_time + " submission file has been made" )
 >>>>>>> wooksbaby
 =======
+=======
+>>>>>>> wonhee
 import torch
 import wandb
 
@@ -212,6 +215,9 @@ def main(args):
     model.inference(data, current_time)
 
     wandb.finish()
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
 
@@ -220,6 +226,9 @@ if __name__ == "__main__":
     os.makedirs(args.model_dir, exist_ok=True)
     main(args)
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> wonhee
 =======
 >>>>>>> wonhee

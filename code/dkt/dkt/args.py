@@ -19,10 +19,14 @@ def parse_args():
     parser.add_argument(
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         "--file_name", default="augment.csv", type=str, help="train file name"
 =======
         "--file_name", default="FE_v8.csv", type=str, help="train file name"
 >>>>>>> wooksbaby
+=======
+        "--file_name", default="FE_v7.csv", type=str, help="train file name"
+>>>>>>> wonhee
 =======
         "--file_name", default="FE_v7.csv", type=str, help="train file name"
 >>>>>>> wonhee
@@ -38,7 +42,11 @@ def parse_args():
     )
     parser.add_argument(
 <<<<<<< HEAD
+<<<<<<< HEAD
         "--test_file_name", default="FE_v8_test.csv", type=str, help="test file name"
+=======
+        "--test_file_name", default="test_data_.csv", type=str, help="test file name"
+>>>>>>> wonhee
 =======
         "--test_file_name", default="test_data_.csv", type=str, help="test file name"
 >>>>>>> wonhee
@@ -80,6 +88,7 @@ def parse_args():
         "--submission_name",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         default="dkt_submission.csv",
 =======
         default="dkt_submission_21.csv",
@@ -87,10 +96,14 @@ def parse_args():
 =======
         default="lastquery.csv",
 >>>>>>> wonhee
+=======
+        default="lastquery.csv",
+>>>>>>> wonhee
         type=str,
         help="submission file name",
     )
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -114,6 +127,8 @@ def parse_args():
 
 >>>>>>> wooksbaby
 =======
+=======
+>>>>>>> wonhee
     ### graph embedding
     parser.add_argument(
         "--graph_embed", default="False", type=strtobool, help="use graph embedding?"
@@ -139,6 +154,9 @@ def parse_args():
         "--n_choice", default=0, type=int, help="random sampling in augmentation?"
     )
 
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
     ### feature engineering
     # 순서: 기존 범주형 + 새로운 범주형 + 새로운 수치형
@@ -150,7 +168,11 @@ def parse_args():
         nargs="+",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         default=["userID", "assessmentItemID", "testId", "answerCode", "KnowledgeTag"],
+=======
+        default=["userID", "answerCode", "assessmentItemID", "testId", "KnowledgeTag"],
+>>>>>>> wonhee
 =======
         default=["userID", "answerCode", "assessmentItemID", "testId", "KnowledgeTag"],
 >>>>>>> wonhee

@@ -1,6 +1,7 @@
 import argparse
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 Feature = [ 'Itemseq', 'SolvingTime', 'CumulativeTime', 'UserAvgSolvingTime',
        'RelativeUserAvgSolvingTime', 'CumulativeItemCount', 'Item_last7days',
        'Item_last30days', 'CumulativeUserItemAcc', 'PastItemCount',
@@ -54,6 +55,14 @@ def parse_args():
     parser.add_argument("--seed", default=42, type=int, help="seed")
     parser.add_argument("--device", default="gpu", type=str, help="cpu or gpu")
 >>>>>>> wonhee
+=======
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--seed", default=42, type=int, help="seed")
+    parser.add_argument("--device", default="gpu", type=str, help="cpu or gpu")
+>>>>>>> wonhee
     parser.add_argument(
         "--data_dir",
         default="../../data/",
@@ -62,8 +71,11 @@ def parse_args():
     )
     parser.add_argument(
 <<<<<<< HEAD
+<<<<<<< HEAD
         "--output_dir", default="cat_submit/", type=str, help="output directory"
 =======
+=======
+>>>>>>> wonhee
         "--file_name", default="train_data.csv", type=str, help="train file name"
     )
     parser.add_argument(
@@ -74,11 +86,15 @@ def parse_args():
     )
     parser.add_argument(
         "--output_dir", default="submit/", type=str, help="output directory"
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
     )
     parser.add_argument(
         "--test_file_name", default="test_data.csv", type=str, help="test file name"
     )
+<<<<<<< HEAD
 <<<<<<< HEAD
     parser.add_argument(
         "--model_dir", default="model/", type=str, help="model directory"
@@ -86,6 +102,8 @@ def parse_args():
     
     args = parser.parse_args()
 =======
+=======
+>>>>>>> wonhee
 
     ### boosting model 관련 argument ###
     parser.add_argument("--n_estimators", default=100, type=int, help="n_estimators")
@@ -119,6 +137,9 @@ def parse_args():
     
     args = parser.parse_args()
     args.feats = args.feats[0].split(' ')
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
     return args

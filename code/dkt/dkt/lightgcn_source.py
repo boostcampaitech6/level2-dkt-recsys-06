@@ -63,6 +63,10 @@ class LightGCN(torch.nn.Module):
             :class:`~torch_geometric.nn.conv.LGConv` layers.
     """
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> wonhee
 =======
 
 >>>>>>> wonhee
@@ -81,6 +85,7 @@ class LightGCN(torch.nn.Module):
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
 <<<<<<< HEAD
+<<<<<<< HEAD
         
         # self.n_users = 
         # self.n_items = 
@@ -89,6 +94,8 @@ class LightGCN(torch.nn.Module):
         if alpha is None:
             self.alpha = nn.Parameter(torch.full((num_layers + 1,), 1.0 / (num_layers + 1)))
 =======
+=======
+>>>>>>> wonhee
 
         # self.n_users =
         # self.n_items =
@@ -98,6 +105,9 @@ class LightGCN(torch.nn.Module):
             self.alpha = nn.Parameter(
                 torch.full((num_layers + 1,), 1.0 / (num_layers + 1))
             )
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
         # if isinstance(alpha, Tensor):
@@ -107,6 +117,7 @@ class LightGCN(torch.nn.Module):
         # self.register_buffer('alpha', alpha)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.user_embedding = Embedding(n_users, embedding_dim) # user embedding
         self.item_embedding = Embedding(n_items, embedding_dim) # item embedding
         self.convs = ModuleList([LGConv(**kwargs) for _ in range(num_layers)])
@@ -115,6 +126,8 @@ class LightGCN(torch.nn.Module):
         self.activation = nn.LeakyReLU()
         self.fc2 = nn.Linear(embedding_dim//4,1)
 =======
+=======
+>>>>>>> wonhee
         self.user_embedding = Embedding(n_users, embedding_dim)  # user embedding
         self.item_embedding = Embedding(n_items, embedding_dim)  # item embedding
         self.convs = ModuleList([LGConv(**kwargs) for _ in range(num_layers)])
@@ -122,6 +135,9 @@ class LightGCN(torch.nn.Module):
         self.fc1 = nn.Linear(embedding_dim * 2, embedding_dim // 4)
         self.activation = nn.LeakyReLU()
         self.fc2 = nn.Linear(embedding_dim // 4, 1)
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
         self.reset_parameters()
@@ -140,8 +156,13 @@ class LightGCN(torch.nn.Module):
         r"""Returns the embedding of nodes in the graph."""
         x = self.embedding.weight
 <<<<<<< HEAD
+<<<<<<< HEAD
         
         print('convolution shape:',x.shape)
+=======
+
+        print("convolution shape:", x.shape)
+>>>>>>> wonhee
 =======
 
         print("convolution shape:", x.shape)
@@ -199,8 +220,12 @@ class LightGCN(torch.nn.Module):
         # return (out_src * out_dst).sum(dim=-1) # item과 user의 임베딩을 같은 선 상에서 유사하게 만듦
         # return 0.5+out_mlp.squeeze(1) + 0.5*out_linear # [num_data,1] -> [num_data]
 <<<<<<< HEAD
+<<<<<<< HEAD
         return out_src, out_dst # end-to-end
 
+=======
+        return out_src, out_dst  # end-to-end
+>>>>>>> wonhee
 =======
         return out_src, out_dst  # end-to-end
 >>>>>>> wonhee
@@ -274,8 +299,12 @@ class LightGCN(torch.nn.Module):
         return top_index
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def link_pred_loss(self, pred: Tensor, edge_label: Tensor,
                        **kwargs) -> Tensor:
+=======
+    def link_pred_loss(self, pred: Tensor, edge_label: Tensor, **kwargs) -> Tensor:
+>>>>>>> wonhee
 =======
     def link_pred_loss(self, pred: Tensor, edge_label: Tensor, **kwargs) -> Tensor:
 >>>>>>> wonhee
@@ -328,13 +357,19 @@ class LightGCN(torch.nn.Module):
 
     def __repr__(self) -> str:
 <<<<<<< HEAD
+<<<<<<< HEAD
         return (f'{self.__class__.__name__}({self.num_nodes}, '
                 f'{self.embedding_dim}, num_layers={self.num_layers})')
 =======
+=======
+>>>>>>> wonhee
         return (
             f"{self.__class__.__name__}({self.num_nodes}, "
             f"{self.embedding_dim}, num_layers={self.num_layers})"
         )
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
 
@@ -360,7 +395,11 @@ class BPRLoss(_Loss):
             :class:`torch.nn.modules.loss._Loss` class.
     """
 <<<<<<< HEAD
+<<<<<<< HEAD
     __constants__ = ['lambda_reg']
+=======
+    __constants__ = ["lambda_reg"]
+>>>>>>> wonhee
 =======
     __constants__ = ["lambda_reg"]
 >>>>>>> wonhee
@@ -371,8 +410,14 @@ class BPRLoss(_Loss):
         self.lambda_reg = lambda_reg
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def forward(self, positives: Tensor, negatives: Tensor,
                 parameters: Tensor = None) -> Tensor:
+=======
+    def forward(
+        self, positives: Tensor, negatives: Tensor, parameters: Tensor = None
+    ) -> Tensor:
+>>>>>>> wonhee
 =======
     def forward(
         self, positives: Tensor, negatives: Tensor, parameters: Tensor = None
@@ -401,7 +446,11 @@ class BPRLoss(_Loss):
             regularization = regularization / positives.size(0)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         return -log_prob + regularization
+=======
+        return -log_prob + regularization
+>>>>>>> wonhee
 =======
         return -log_prob + regularization
 >>>>>>> wonhee

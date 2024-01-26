@@ -28,9 +28,13 @@ def main(args):
     args.device = "cuda" if torch.cuda.is_available() else "cpu"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     args.submission_name = f'{args.model}_current_time'
 >>>>>>> wooksbaby
+=======
+    args.submission_name = f"{args.model}_current_time"
+>>>>>>> wonhee
 =======
     args.submission_name = f"{args.model}_current_time"
 >>>>>>> wonhee
@@ -40,11 +44,15 @@ def main(args):
     preprocess.load_train_data(args=args, file_name=args.file_name)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     train_data: np.ndarray = preprocess.get_train_data()
     train_data, valid_data = preprocess.split_data(data=train_data)
     wandb.init(project="level2-dkt", config=vars(args), entity="boostcamp6-recsys6")
     wandb.run.name = "Yechan Kim " + current_time
     wandb.run.save()
+=======
+    data: np.ndarray = preprocess.get_train_data()
+>>>>>>> wonhee
 =======
     data: np.ndarray = preprocess.get_train_data()
 >>>>>>> wonhee
@@ -62,6 +70,7 @@ def main(args):
             wandb.run.name = f"Wonhee Lee {current_time} {i+1}th fold"
             wandb.run.save()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     wandb.finish()
 =======
@@ -114,6 +123,8 @@ def main(args):
 
 >>>>>>> wooksbaby
 =======
+=======
+>>>>>>> wonhee
             print(f"Starting {i+1}th fold ...")
             # train_id, val_id = fold
             # train_data = [data[i] for i in train_id] # sliding window 적용하면 무조건 list 자료형이어야 함 ㅜ
@@ -148,6 +159,9 @@ def main(args):
         )
 
         wandb.finish()
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
 
@@ -155,15 +169,21 @@ if __name__ == "__main__":
     args = parse_args()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     if args.kfolds!=0 and args.window==True and args.n_choice!=0:
         if args.kfolds % args.n_choice != 0 and args.n_choice % args.kfolds != 0:
             args.error('n_choice는 반드시 kfold의 배수여야 합니다. ex) 5,10 정 안되면 10,5으로 두 명의 유저씩 kfold')
 =======
+=======
+>>>>>>> wonhee
     if args.kfolds != 0 and args.window == True and args.n_choice != 0:
         if args.kfolds % args.n_choice != 0 and args.n_choice % args.kfolds != 0:
             args.error(
                 "n_choice는 반드시 kfold의 배수여야 합니다. ex) 5,10 정 안되면 10,5으로 두 명의 유저씩 kfold"
             )
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
 
     os.makedirs(args.model_dir, exist_ok=True)

@@ -13,7 +13,11 @@ from .criterion import get_criterion
 from .dataloader import get_loaders
 from .metric import get_metric
 <<<<<<< HEAD
+<<<<<<< HEAD
 from .model import LSTM, LSTMATTN, BERT, LastQuery, LastQuery2
+=======
+from .model import LSTM, LSTMATTN, BERT, LastQuery
+>>>>>>> wonhee
 =======
 from .model import LSTM, LSTMATTN, BERT, LastQuery
 >>>>>>> wonhee
@@ -25,6 +29,7 @@ from .utils import get_logger, logging_conf
 logger = get_logger(logger_conf=logging_conf)
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
@@ -39,6 +44,17 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, 
     train_loader, valid_loader = get_loaders(
         args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
 >>>>>>> wooksbaby
+=======
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module): # , kfold: int):
+    with open(
+        "/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle",
+        "rb",
+    ) as file:
+        dict_graph = pickle.load(file)
+
+    train_loader, valid_loader = get_loaders(
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
+>>>>>>> wonhee
 =======
 def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module): # , kfold: int):
     with open(
@@ -79,10 +95,14 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
         # VALID
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
 =======
         auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
 >>>>>>> wooksbaby
+=======
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
+>>>>>>> wonhee
 =======
         auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
 >>>>>>> wonhee
@@ -95,6 +115,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
                 train_acc_epoch=train_acc,
                 valid_auc_epoch=auc,
                 valid_acc_epoch=acc,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             )
@@ -136,11 +157,20 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
             )
         )
 
+=======
+                valid_loss_epoch=loss,
+            )
+        )
+
+>>>>>>> wonhee
         # if auc > best_auc:
         #     best_auc = auc
         if loss < best_val_loss:
             best_val_loss = loss
         #     # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+<<<<<<< HEAD
+>>>>>>> wonhee
+=======
 >>>>>>> wonhee
             model_to_save = model.module if hasattr(model, "module") else model
             save_checkpoint(
@@ -148,10 +178,15 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
                 model_dir=args.model_dir,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                 model_filename="best_model.pt",
 =======
                 model_filename=f"{current_time}_fold{n_fold}.pt",
 >>>>>>> wooksbaby
+=======
+                # model_filename= f"best_model_{kfold}.pt",
+                model_filename= "best_model.pt",
+>>>>>>> wonhee
 =======
                 # model_filename= f"best_model_{kfold}.pt",
                 model_filename= "best_model.pt",
@@ -257,9 +292,12 @@ def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
 
     model.eval()
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
         dict_graph = pickle.load(file)
+=======
+>>>>>>> wonhee
 =======
 >>>>>>> wonhee
     _, test_loader = get_loaders(args=args, train=None, valid=test_data, dict_graph=dict_graph)
@@ -306,6 +344,7 @@ def get_model(args) -> nn.Module:
             "bert": BERT,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             "lastquery":LastQuery,
             'lastquery2':LastQuery2,
@@ -314,6 +353,10 @@ def get_model(args) -> nn.Module:
         }.get(
             model_name
         )(**model_args)
+=======
+            "lastquery": LastQuery,
+        }.get(model_name)(**model_args)
+>>>>>>> wonhee
 =======
             "lastquery": LastQuery,
         }.get(model_name)(**model_args)

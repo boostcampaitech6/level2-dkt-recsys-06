@@ -22,10 +22,14 @@ code/**/run.log
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 *.parquet
 =======
 *.parquet
 >>>>>>> wooksbaby
+=======
+*.parquet
+>>>>>>> wonhee
 =======
 *.parquet
 >>>>>>> wonhee
