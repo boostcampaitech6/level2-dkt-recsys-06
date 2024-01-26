@@ -3,3 +3,21 @@
 code/**/__pycache__
 
 code/**/run.log
+
+*.csv
+
+*.tsv
+
+*.tfevents
+
+/**/catboost_info
+
+*.json
+
+*.pkl
+
+*.pt
+
+*.npy
+
+*.parquet
