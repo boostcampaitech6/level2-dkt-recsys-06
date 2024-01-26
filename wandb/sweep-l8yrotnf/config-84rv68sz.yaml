@@ -1,0 +1,22 @@
+wandb_version: 1
+
+bagging_fraction:
+  value: 0.7920746063642681
+bagging_freq:
+  value: 15
+feature_fraction:
+  value: 0.6878392433383701
+lambda_l1:
+  value: 5.092242154877718
+lambda_l2:
+  value: 7.1058346798824745
+learning_rate:
+  value: 0.17193834137611377
+max_depth:
+  value: 29
+min_data_in_leaf:
+  value: 101
+num_leaves:
+  value: 58
+ratio:
+  value: 0.08457814977680132

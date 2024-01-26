@@ -1,0 +1,36 @@
+2024-01-25 03:33:15,845 INFO    Thread-2  :722282 [wandb_setup.py:_flush():76] Current SDK version is 0.16.2
+2024-01-25 03:33:15,846 INFO    Thread-2  :722282 [wandb_setup.py:_flush():76] Configure stats pid to 722282
+2024-01-25 03:33:15,846 INFO    Thread-2  :722282 [wandb_setup.py:_flush():76] Loading settings from /opt/ml/.config/wandb/settings
+2024-01-25 03:33:15,847 INFO    Thread-2  :722282 [wandb_setup.py:_flush():76] Loading settings from /data/ephemeral/level2-dkt-recsys-06/wandb/settings
+2024-01-25 03:33:15,847 INFO    Thread-2  :722282 [wandb_setup.py:_flush():76] Loading settings from environment variables: {'notebook_name': 'LGBM_training.py', 'entity': 'boostcamp6-recsys6', 'project': 'lightgbm-sweep', 'root_dir': '/data/ephemeral/level2-dkt-recsys-06', 'sweep_id': 'jw68d6lp', 'run_id': 'bsr94jxn', 'sweep_param_path': '/data/ephemeral/level2-dkt-recsys-06/wandb/sweep-jw68d6lp/config-bsr94jxn.yaml'}
+2024-01-25 03:33:15,847 INFO    Thread-2  :722282 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-01-25 03:33:15,848 INFO    Thread-2  :722282 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'code/boost/LGBM_training.py', 'program_abspath': '/data/ephemeral/level2-dkt-recsys-06/code/boost/LGBM_training.py', 'program': '/data/ephemeral/level2-dkt-recsys-06/code/boost/LGBM_training.py'}
+2024-01-25 03:33:15,849 INFO    Thread-2  :722282 [wandb_init.py:_log_setup():526] Logging user logs to /data/ephemeral/level2-dkt-recsys-06/wandb/run-20240125_033315-bsr94jxn/logs/debug.log
+2024-01-25 03:33:15,849 INFO    Thread-2  :722282 [wandb_init.py:_log_setup():527] Logging internal logs to /data/ephemeral/level2-dkt-recsys-06/wandb/run-20240125_033315-bsr94jxn/logs/debug-internal.log
+2024-01-25 03:33:15,850 INFO    Thread-2  :722282 [wandb_init.py:init():566] calling init triggers
+2024-01-25 03:33:15,850 INFO    Thread-2  :722282 [wandb_init.py:init():573] wandb.init called with sweep_config: {'bagging_fraction': 0.8757795494476488, 'bagging_freq': 15, 'feature_fraction': 0.3641425337534806, 'lambda_l1': 4.100312345614298, 'lambda_l2': 5.681044195026413, 'learning_rate': 0.08293226030616485, 'max_depth': 23, 'min_data_in_leaf': 106, 'num_leaves': 43, 'ratio': 0.02341979917432272}
+config: {'project': 'lightgbm-sweep', 'method': 'bayes', 'metric': {'name': 'auc', 'goal': 'maximize'}, 'parameters': {'num_leaves': {'min': 20, 'max': 60}, 'learning_rate': {'min': 1e-05, 'max': 0.2}, 'min_data_in_leaf': {'min': 5, 'max': 120}, 'feature_fraction': {'min': 0.3, 'max': 1.0}, 'bagging_fraction': {'min': 0.7, 'max': 1.0}, 'bagging_freq': {'min': 5, 'max': 20}, 'lambda_l1': {'min': 0.0, 'max': 10.0}, 'lambda_l2': {'min': 0.0, 'max': 15.0}, 'max_depth': {'min': 10, 'max': 50}, 'ratio': {'min': 0.01, 'max': 0.1}}}
+2024-01-25 03:33:15,851 INFO    Thread-2  :722282 [wandb_init.py:init():616] starting backend
+2024-01-25 03:33:15,852 INFO    Thread-2  :722282 [wandb_init.py:init():620] setting up manager
+2024-01-25 03:33:15,859 INFO    Thread-2  :722282 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2024-01-25 03:33:15,862 INFO    Thread-2  :722282 [wandb_init.py:init():628] backend started and connected
+2024-01-25 03:33:15,875 INFO    Thread-2  :722282 [wandb_run.py:_config_callback():1342] config_cb None None {'bagging_fraction': 0.8757795494476488, 'bagging_freq': 15, 'feature_fraction': 0.3641425337534806, 'lambda_l1': 4.100312345614298, 'lambda_l2': 5.681044195026413, 'learning_rate': 0.08293226030616485, 'max_depth': 23, 'min_data_in_leaf': 106, 'num_leaves': 43, 'ratio': 0.02341979917432272}
+2024-01-25 03:33:15,881 INFO    Thread-2  :722282 [wandb_init.py:init():720] updated telemetry
+2024-01-25 03:33:15,962 INFO    Thread-2  :722282 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2024-01-25 03:33:16,539 INFO    Thread-2  :722282 [wandb_run.py:_on_init():2254] communicating current version
+2024-01-25 03:33:16,755 INFO    Thread-2  :722282 [wandb_run.py:_on_init():2263] got version response 
+2024-01-25 03:33:16,755 INFO    Thread-2  :722282 [wandb_init.py:init():804] starting run threads in backend
+2024-01-25 03:33:20,229 INFO    Thread-2  :722282 [wandb_run.py:_console_start():2233] atexit reg
+2024-01-25 03:33:20,230 INFO    Thread-2  :722282 [wandb_run.py:_redirect():2088] redirect: wrap_raw
+2024-01-25 03:33:20,230 INFO    Thread-2  :722282 [wandb_run.py:_redirect():2153] Wrapping output streams.
+2024-01-25 03:33:20,230 INFO    Thread-2  :722282 [wandb_run.py:_redirect():2178] Redirects installed.
+2024-01-25 03:33:20,232 INFO    Thread-2  :722282 [wandb_init.py:init():847] run started, returning control to user process
+2024-01-25 03:33:20,233 INFO    Thread-2  :722282 [wandb_run.py:_config_callback():1342] config_cb None None {'metric': ['auc']}
+2024-01-25 03:33:27,951 INFO    Thread-2  :722282 [wandb_run.py:_config_callback():1342] config_cb None None {'objective': 'binary', 'metric': ['auc'], 'device': 'cpu', 'num_iterations': 10000, 'early_stopping_round': None}
+2024-01-25 03:43:20,603 INFO    Thread-2  :722282 [wandb_run.py:_finish():1962] finishing run boostcamp6-recsys6/lightgbm-sweep/bsr94jxn
+2024-01-25 03:43:20,604 INFO    Thread-2  :722282 [wandb_run.py:_atexit_cleanup():2202] got exitcode: 0
+2024-01-25 03:43:20,608 INFO    Thread-2  :722282 [wandb_run.py:_restore():2185] restore
+2024-01-25 03:43:20,611 INFO    Thread-2  :722282 [wandb_run.py:_restore():2191] restore done
+2024-01-25 03:49:29,236 INFO    Thread-2  :722282 [wandb_run.py:_footer_history_summary_info():3857] rendering history
+2024-01-25 03:49:29,237 INFO    Thread-2  :722282 [wandb_run.py:_footer_history_summary_info():3889] rendering summary
+2024-01-25 03:49:29,240 INFO    Thread-2  :722282 [wandb_run.py:_footer_sync_info():3816] logging synced files

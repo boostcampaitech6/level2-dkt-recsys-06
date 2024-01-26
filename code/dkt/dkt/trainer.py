@@ -6,11 +6,12 @@ import torch
 from torch import nn
 from torch.nn.functional import sigmoid
 import wandb
+import pickle
 
 from .criterion import get_criterion
 from .dataloader import get_loaders
 from .metric import get_metric
-from .model import LSTM, LSTMATTN, BERT
+from .model import LSTM, LSTMATTN, BERT, LastQuery, LastQuery2
 from .optimizer import get_optimizer
 from .scheduler import get_scheduler
 from .utils import get_logger, logging_conf
@@ -19,9 +20,13 @@ from .utils import get_logger, logging_conf
 logger = get_logger(logger_conf=logging_conf)
 
 
-def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
+def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module, n_fold, current_time):
+
+    with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
+        dict_graph = pickle.load(file)
+    
     train_loader, valid_loader = get_loaders(
-        args=args, train=train_data, valid=valid_data
+        args=args, train=train_data, valid=valid_data, dict_graph=dict_graph
     )
 
     # For warmup scheduler which uses step interval
@@ -34,6 +39,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
     scheduler = get_scheduler(optimizer=optimizer, args=args)
 
     best_auc = -1
+    best_val_loss = 1e9
     early_stopping_counter = 0
     for epoch in range(args.n_epochs):
         logger.info("Start Training: Epoch %s", epoch + 1)
@@ -48,7 +54,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
         )
 
         # VALID
-        _, auc, acc = validate(valid_loader=valid_loader, model=model, args=args)
+        auc, acc, loss = validate(valid_loader=valid_loader, model=model, args=args)
 
         wandb.log(
             dict(
@@ -58,17 +64,38 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
                 train_acc_epoch=train_acc,
                 valid_auc_epoch=auc,
                 valid_acc_epoch=acc,
+                valid_loss_epoch=loss
             )
         )
 
-        if auc > best_auc:
-            best_auc = auc
+        # if auc > best_auc:
+        #     best_auc = auc
+        #     # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
+        #     model_to_save = model.module if hasattr(model, "module") else model
+        #     save_checkpoint(
+        #         state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
+        #         model_dir=args.model_dir,
+        #         model_filename="best_model.pt",
+        #     )
+        #     early_stopping_counter = 0
+        # else:
+        #     early_stopping_counter += 1
+        #     if early_stopping_counter >= args.patience:
+        #         logger.info(
+        #             "EarlyStopping counter: %s out of %s",
+        #             early_stopping_counter,
+        #             args.patience,
+        #         )
+        #         break
+        
+        if loss < best_val_loss:
+            best_val_loss = loss
             # nn.DataParallel로 감싸진 경우 원래의 model을 가져옵니다.
             model_to_save = model.module if hasattr(model, "module") else model
             save_checkpoint(
                 state={"epoch": epoch + 1, "state_dict": model_to_save.state_dict()},
                 model_dir=args.model_dir,
-                model_filename="best_model.pt",
+                model_filename=f"{current_time}_fold{n_fold}.pt",
             )
             early_stopping_counter = 0
         else:
@@ -83,7 +110,7 @@ def run(args, train_data: np.ndarray, valid_data: np.ndarray, model: nn.Module):
 
         # scheduler
         if args.scheduler == "plateau":
-            scheduler.step(best_auc)
+            scheduler.step(best_val_loss)
 
 
 def train(
@@ -163,10 +190,16 @@ def validate(valid_loader: nn.Module, model: nn.Module, args):
 
 def inference(args, test_data: np.ndarray, model: nn.Module) -> None:
     model.eval()
-    _, test_loader = get_loaders(args=args, train=None, valid=test_data)
+
+    with open('/data/ephemeral/home/level2-dkt-recsys-06/code/dkt/graph_emb/graph_embed_01-17 18:35.pickle', 'rb') as file:
+        dict_graph = pickle.load(file)
+    _, test_loader = get_loaders(args=args, train=None, valid=test_data, dict_graph=dict_graph)
 
     total_preds = []
     for step, batch in enumerate(test_loader):
+        print(batch['question'].shape)
+        print(batch['correct'][:,-1])
+
         batch = {k: v.to(args.device) for k, v in batch.items()}
         preds = model(batch)
 
@@ -202,6 +235,9 @@ def get_model(args) -> nn.Module:
             "lstm": LSTM,
             "lstmattn": LSTMATTN,
             "bert": BERT,
+            "lastquery":LastQuery,
+            'lastquery2':LastQuery2,
+            # 'saint':Saint
         }.get(
             model_name
         )(**model_args)
