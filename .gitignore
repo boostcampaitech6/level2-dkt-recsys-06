@@ -15,5 +15,3 @@ code/**/catboost_info
 *.json
 
 *.pkl
-
-code/boost/catboost_info/catboost_training.json
