@@ -22,13 +22,20 @@ from typing import TYPE_CHECKING, Callable
 import wandb
 from wandb.sdk.lib import telemetry as wb_telemetry
 
+
 MINIMIZE_METRICS = [
     "l1",
     "l2",
+    "rmse",
+    "mape",
+    "huber",
+    "fair",
+    "poisson",
+    "gamma",
     "binary_logloss",
 ]
 
-MAXIMIZE_METRICS = ["auc"]
+MAXIMIZE_METRICS = ["map", "auc", "average_precision"]
 
 def set_seeds(seed: int = 42):
     # 랜덤 시드를 설정하여 매 코드를 실행할 때마다 동일한 결과를 얻게 합니다.
@@ -136,36 +143,36 @@ sweep_id = wandb.sweep(sweep=sweep_config, project="lightgbm-sweep", entity='boo
 set_seeds()
 
 
-X = pd.read_csv('/data/ephemeral/home/level2-dkt-recsys-06/data/FE_v8.csv')
-test =  pd.read_csv('/data/ephemeral/home/level2-dkt-recsys-06/data/FE_v8_test.csv')
+X = pd.read_csv('/data/ephemeral/home/level2-dkt-recsys-06/data/FE_v9.csv')
+# test =  pd.read_csv('/data/ephemeral/home/level2-dkt-recsys-06/data/FE_v8_test.csv')
 X = X.sort_values(by=["userID", "Timestamp", "assessmentItemID"]).reset_index(drop=True)
-test = test.sort_values(by=["userID", "Timestamp", "assessmentItemID"]).reset_index(drop=True)
+# test = test.sort_values(by=["userID", "Timestamp", "assessmentItemID"]).reset_index(drop=True)
 
-test = test[test["answerCode"] == -1]
+test = X[X["answerCode"] == -1]
 X = X[X['answerCode']!=-1]
 
-Feature = ['Itemseq', 'SolvingTime', 'CumulativeTime', 'UserAvgSolvingTime',
-       'Difference_SolvingTime_UserAvgSolvingTime', 'CumulativeItemCount',
-       'Item_last7days', 'Item_last30days', 'CumulativeUserItemAcc',
-       'PastItemCount', 'UserItemElapsed', 'ItemAcc',
+Feature = [ 'Itemseq', 'SolvingTime', 'CumulativeTime', 'UserAvgSolvingTime',
+       'RelativeUserAvgSolvingTime', 'CumulativeItemCount', 'Item_last7days',
+       'Item_last30days', 'CumulativeUserItemAcc', 'PastItemCount',
+       'UserItemElapsed', 'UserRecentItemSolvingTime', 'ItemAcc',
        'AverageItemSolvingTime_Correct', 'AverageItemSolvingTime_Incorrect',
-       'AverageItemSolvingTime', 'Difference_SolvingTime_AvgItemSolvingTime',
-       'UserTagAvgSolvingTime', 'TagAcc', 'CumulativeUserTagAverageAcc',
-       'CumulativeUserTagExponentialAverage', 'UserTagCount', 'UserTagElapsed',
-       'PastTagSolvingTime', 
-       'TestAcc'
-]
+       'AverageItemSolvingTime', 'RelativeItemSolvingTime',
+       'SolvingTimeClosenessDegree', 'UserTagAvgSolvingTime', 'TagAcc',
+       'CumulativeUserTagAverageAcc', 'CumulativeUserTagExponentialAverage',
+       'UserTagCount', 'UserTagElapsed',  'TestAcc']
 
-Categorical_Feature = ['userID', 'assessmentItemID', 'testId', 'KnowledgeTag', 
-       'Month','DayOfWeek', 'TimeOfDay', 'WeekOfYear',
-       'UserRecentTagAnswer', 'PreviousItemAnswer',
-       'categorize_solvingTime', 'categorize_ItemAcc',
-       'categorize_TagAcc', 'categorize_TestAcc',
+Categorical_Feature = ['userID', 'assessmentItemID', 'testId','KnowledgeTag',
+                       'Month','DayOfWeek', 'TimeOfDay', 'WeekOfYear', 
+       'UserRecentTagAnswer',
+       'UserRecentItemAnswer',
+       'categorize_solvingTime',
+       'categorize_ItemAcc', 'categorize_TagAcc', 'categorize_TestAcc',
        'categorize_CumulativeUserItemAcc',
-       # 'categorize_CumulativeUserTagAverageAcc',
-       # 'categorize_CumulativeUserTagExponentialAverage'
-]
+       'categorize_CumulativeUserTagAverageAcc',
+       'categorize_CumulativeUserTagExponentialAverage']
+
 Feature = Feature + Categorical_Feature
+
 
 # as category: integer여도 범주형으로 취급 가능
 for feature in Categorical_Feature:
@@ -182,13 +189,9 @@ exclude_columns = [
     'UserAvgSolvingTime',
     'PastItemCount',
     "user_tag_total_answer",
-    "categorize_CumulativeUserTagExponentialAverage",
-    'categorize_CumulativeUserTagAverageAnswerRate',
-    "categorize_TestAnswerRate",
-    "categorize_TagAnswerRate"
 ]
-
-filtered_feat = [column for column in feat if column not in exclude_columns]
+fitered_feat = [col for col in Feature if col in feat]
+filtered_feat = [column for column in Feature if column not in exclude_columns]
 
 
 
@@ -224,7 +227,6 @@ def train():
     wandb.run.name = f"Hyeongjin {current_time}"
     current_params = {
         "objective": "binary",
-        "metric": ["auc"],
         "device": "cpu",
         "num_leaves": wandb.config.num_leaves,
         "learning_rate": wandb.config.learning_rate,
@@ -235,8 +237,9 @@ def train():
         "bagging_freq": wandb.config.bagging_freq,
         "lambda_l1": wandb.config.lambda_l1,
         "lambda_l2": wandb.config.lambda_l2,
-        # "cat_smooth": wandb.config.cat_smooth,
+        "cat_smooth": wandb.config.cat_smooth,
     }
+
     model = lgb.train(
         current_params,
         lgb_train,
@@ -246,14 +249,17 @@ def train():
             wandb_callback(log_params=True, define_metric=True),
             lgb.early_stopping(30),
         ],
-        categorical_feature=[
-            "userID",
-            "assessmentItemID",
-            "testId",
-            "KnowledgeTag",
-            "Month"
-        ],
+        categorical_feature = ['userID', 'assessmentItemID', 'testId','KnowledgeTag',
+                       'Month', 'TimeOfDay', 
+       'UserRecentTagAnswer',
+       'UserRecentItemAnswer',
+       'categorize_solvingTime',
+       'categorize_ItemAcc', 'categorize_TagAcc', 'categorize_TestAcc',
+       'categorize_CumulativeUserItemAcc',
+       'categorize_CumulativeUserTagAverageAcc',
+       'categorize_CumulativeUserTagExponentialAverage']
     )
+
     preds = model.predict(X_valid[filtered_feat])
     acc = accuracy_score(y_valid, np.where(preds >= 0.5, 1, 0))
     auc = roc_auc_score(y_valid, preds)
@@ -261,12 +267,12 @@ def train():
     print(f"VALID AUC : {auc} ACC : {acc}\n")
     wandb.log({"valid_1_auc": auc, "accuracy": acc})
     wandb.finish()
-    
+
     #output파일 생성
     output_dir = "output/"
     write_path = os.path.join(
         output_dir,
-        f"auc:{auc} acc:{acc}" + "sweep" + " lgbm.csv",
+        f"auc:{auc} acc:{acc}" +current_time+ "sweep" + " lgbm.csv",
     )
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -275,7 +281,7 @@ def train():
         w.write("id,prediction\n")
         for id, p in enumerate(test_preds):
             w.write("{},{}\n".format(id, p))
-            
+
     feature_importances = model.feature_importance()
     feature_names = model.feature_name()
     importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances}).sort_values(by='Importance', ascending=False)

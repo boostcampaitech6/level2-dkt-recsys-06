@@ -1,5 +1,10 @@
 project: lightgbm-sweep
 method: bayes
+program: LGBM_training.py
+name: Hyeongjin
+description: dkt lgbm sweep
+entity: boostcamp6-recsys6
+
 
 metric:
   name: auc
@@ -10,11 +15,11 @@ parameters:
     min: 20  # 미세 조정하지 않음
     max: 60  # 긍정적 상관관계가 있으므로 범위를 약간 늘림
   learning_rate:
-    min: 0.01 # 미세 조정하지 않음
+    min: 0.04 # 미세 조정하지 않음
     max: 0.4  # 긍정적 상관관계가 있으므로 범위를 약간 늘림
   min_data_in_leaf:
     min: 5    # 미세 조정하지 않음
-    max: 120  # 약간 늘릴 수 있음
+    max: 200  # 약간 늘릴 수 있음
   feature_fraction:
     min: 0.3  # 중요도와 상관관계가 낮으므로 미세 조정
     max: 1.0  # 미세 조정하지 않음
@@ -31,8 +36,11 @@ parameters:
     min: 0.0  # 미세 조정하지 않음
     max: 15.0 # 중요도가 높으므로 범위를
   max_depth:
-    min: 10   # 미세 조정하지 않음
+    min: 5   # 미세 조정하지 않음
     max: 50   # 높은 중요도와 긍정적 상관관계가 있으므로 범위를 늘림
   ratio:
-    min: 0.05
-    max: 0.3
+    min: 0.03
+    max: 0.1
+  cat_smooth:
+    min: 0
+    max: 80
