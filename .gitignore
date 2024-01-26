@@ -1,4 +1,4 @@
-code/**/wandb
+/**/wandb
 
 code/**/__pycache__
 
@@ -6,31 +6,18 @@ code/**/run.log
 
 *.csv
 
+*.tsv
+
+*.tfevents
+
+/**/catboost_info
+
+*.json
+
+*.pkl
+
 *.pt
-code/lightgcn/models/best_model.pt
-code/lightgcn/models/last_model.pt
-code/submit/lightgcn_submission.csv
-code/dkt/data/test_data.csv
-code/dkt/data/train_data.csv
-code/dkt/asset/assessmentItemID_classes.npy
-code/dkt/asset/testId_classes.npy
 
 *.npy
 
-*.pickle
-code/boost/model/CAT_20240118_200159.pkl
-code/boost/model/CAT_20240119_033006.pkl
-code/boost/model/CAT_20240119_061247.pkl
-code/boost/model/CAT_79.pkl
-code/boost/model/CAT_20240119_081628.pkl
-code/boost/model/CAT_20240119_144811.pkl
-code/boost/model/CAT_20240119_155524.pkl
-code/boost/model/CAT_20240119_155933.pkl
-code/boost/model/CAT_20240120_041943.pkl
-code/boost/model/CAT_20240120_051718.pkl
-code/boost/model/CAT_20240120_052052.pkl
-code/boost/model/CAT_20240120_063931.pkl
-code/lightgcn/models/best_model.pt
-code/lightgcn/models/last_model.pt
-code/dkt/models/best_model.pt
-code/dkt/asset/assessmentItemID_classes.npy
+*.parquet
