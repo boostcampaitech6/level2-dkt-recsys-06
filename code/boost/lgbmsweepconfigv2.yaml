@@ -7,13 +7,13 @@ metric:
 
 parameters:
   num_leaves:
-    min: 20  # 미세 조정하지 않음
+    min: 25  # 미세 조정하지 않음
     max: 60  # 긍정적 상관관계가 있으므로 범위를 약간 늘림
   learning_rate:
-    min: 0.01 # 미세 조정하지 않음
-    max: 0.4  # 긍정적 상관관계가 있으므로 범위를 약간 늘림
+    min: 0.001 # 미세 조정하지 않음
+    max: 0.2  # 긍정적 상관관계가 있으므로 범위를 약간 늘림
   min_data_in_leaf:
-    min: 5    # 미세 조정하지 않음
+    min: 80    # 미세 조정하지 않음
     max: 120  # 약간 늘릴 수 있음
   feature_fraction:
     min: 0.3  # 중요도와 상관관계가 낮으므로 미세 조정
@@ -31,8 +31,5 @@ parameters:
     min: 0.0  # 미세 조정하지 않음
     max: 15.0 # 중요도가 높으므로 범위를
   max_depth:
-    min: 10   # 미세 조정하지 않음
+    min: 20   # 미세 조정하지 않음
     max: 50   # 높은 중요도와 긍정적 상관관계가 있으므로 범위를 늘림
-  ratio:
-    min: 0.05
-    max: 0.3

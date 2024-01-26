@@ -1,0 +1,132 @@
+wandb_version: 1
+
+bagging_fraction:
+  desc: null
+  value: 0.7701897899077593
+bagging_freq:
+  desc: null
+  value: 5
+feature_fraction:
+  desc: null
+  value: 0.30674097760869373
+lambda_l1:
+  desc: null
+  value: 2.1832305609507605
+lambda_l2:
+  desc: null
+  value: 9.646733528394316
+learning_rate:
+  desc: null
+  value: 0.07640982467315902
+max_depth:
+  desc: null
+  value: 21
+min_data_in_leaf:
+  desc: null
+  value: 74
+num_leaves:
+  desc: null
+  value: 31
+ratio:
+  desc: null
+  value: 0.15661858932726264
+project:
+  desc: null
+  value: lightgbm-sweep
+method:
+  desc: null
+  value: bayes
+metric:
+  desc: null
+  value:
+  - auc
+parameters:
+  desc: null
+  value:
+    num_leaves:
+      min: 20
+      max: 60
+    learning_rate:
+      min: 0.01
+      max: 0.4
+    min_data_in_leaf:
+      min: 5
+      max: 120
+    feature_fraction:
+      min: 0.3
+      max: 1.0
+    bagging_fraction:
+      min: 0.7
+      max: 1.0
+    bagging_freq:
+      min: 5
+      max: 20
+    lambda_l1:
+      min: 0.0
+      max: 10.0
+    lambda_l2:
+      min: 0.0
+      max: 15.0
+    max_depth:
+      min: 10
+      max: 50
+    ratio:
+      min: 0.05
+      max: 0.3
+_wandb:
+  desc: null
+  value:
+    python_version: 3.8.18
+    cli_version: 0.16.2
+    framework: lightgbm
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1706148967.799942
+    t:
+      1:
+      - 1
+      - 5
+      - 8
+      - 53
+      - 55
+      2:
+      - 1
+      - 5
+      - 8
+      - 53
+      - 55
+      3:
+      - 7
+      - 16
+      - 17
+      - 23
+      - 25
+      - 37
+      4: 3.8.18
+      5: 0.16.2
+      8:
+      - 5
+      13: linux-x86_64
+    m:
+    - 1: training_auc
+      6:
+      - 3
+      7:
+      - 2
+    - 1: valid_1_auc
+      6:
+      - 3
+      7:
+      - 2
+objective:
+  desc: null
+  value: binary
+device:
+  desc: null
+  value: cpu
+num_iterations:
+  desc: null
+  value: 500
+early_stopping_round:
+  desc: null
+  value: null

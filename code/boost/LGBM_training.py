@@ -1,4 +1,5 @@
-import warnings 
+import warnings
+
 warnings.filterwarnings("ignore")
 
 import pandas as pd
@@ -17,7 +18,7 @@ from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import LabelEncoder
 from wandb.lightgbm import wandb_callback, log_summary
 
-#wandb_callback 수정 
+# wandb_callback 수정
 from typing import TYPE_CHECKING, Callable
 import wandb
 from wandb.sdk.lib import telemetry as wb_telemetry
@@ -25,10 +26,17 @@ from wandb.sdk.lib import telemetry as wb_telemetry
 MINIMIZE_METRICS = [
     "l1",
     "l2",
+    "rmse",
+    "mape",
+    "huber",
+    "fair",
+    "poisson",
+    "gamma",
     "binary_logloss",
 ]
 
-MAXIMIZE_METRICS = ["auc"]
+MAXIMIZE_METRICS = ["map", "auc", "average_precision"]
+
 
 def set_seeds(seed: int = 42):
     # 랜덤 시드를 설정하여 매 코드를 실행할 때마다 동일한 결과를 얻게 합니다.
@@ -38,7 +46,8 @@ def set_seeds(seed: int = 42):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-        
+
+
 def wandb_callback(log_params=True, define_metric=True) -> Callable:
     """Automatically integrates LightGBM with wandb.
 
@@ -68,8 +77,8 @@ def wandb_callback(log_params=True, define_metric=True) -> Callable:
                         callbacks=[wandb_callback()])
         ```
     """
+
     def _define_metric(data: str, metric_name: str) -> None:
-    
         """Capture model performance at the best step.
         instead of the last step, of training in your `wandb.summary`
         """
@@ -79,7 +88,7 @@ def wandb_callback(log_params=True, define_metric=True) -> Callable:
             wandb.define_metric(f"{data}_{metric_name}", summary="min")
         elif str.lower(metric_name) in MAXIMIZE_METRICS:
             wandb.define_metric(f"{data}_{metric_name}", summary="max")
-            
+
     log_params_list: "List[bool]" = [log_params]
     define_metric_list: "List[bool]" = [define_metric]
 
@@ -102,14 +111,14 @@ def wandb_callback(log_params=True, define_metric=True) -> Callable:
         # eval_results: "Dict[str, Dict[str, List[Any]]]" = {}
         # recorder = lightgbm.record_evaluation(eval_results)
         # recorder(env)
-        eval_results = {x[0]:{x[1:][0]:x[1:][1:]} for x in env.evaluation_result_list}
+        eval_results = {x[0]: {x[1:][0]: x[1:][1:]} for x in env.evaluation_result_list}
 
         for validation_key in eval_results.keys():
             for key in eval_results[validation_key].keys():
-                 wandb.log(
-                     {validation_key + "_" + key: eval_results[validation_key][key][0]},
-                     commit=False,
-                 )
+                wandb.log(
+                    {validation_key + "_" + key: eval_results[validation_key][key][0]},
+                    commit=False,
+                )
         for item in eval_results:
             if len(item) == 4:
                 wandb.log({f"{item[0]}_{item[1]}": item[2]}, commit=False)
@@ -121,56 +130,85 @@ def wandb_callback(log_params=True, define_metric=True) -> Callable:
 
 
 ### TRAINING
-sweep_config_path = '/data/ephemeral/home/level2-dkt-recsys-06/code/boost/lgbmsweepconfigv2.yaml'
+sweep_config_path = (
+    "/data/ephemeral/level2-dkt-recsys-06/code/boost/lgbmsweepconfigv2.yaml"
+)
 
 # 노트북의 이름 설정
-os.environ['WANDB_NOTEBOOK_NAME'] = 'LGBM_training.py'
+os.environ["WANDB_NOTEBOOK_NAME"] = "LGBM_training.py"
 # YAML 파일 로드
-with open(sweep_config_path, 'r') as file:
+with open(sweep_config_path, "r") as file:
     sweep_config = yaml.safe_load(file)
-
+print(sweep_config)
 # W&B 스위프트 설정
-sweep_id = wandb.sweep(sweep=sweep_config, project="lightgbm-sweep", entity='boostcamp6-recsys6')
+sweep_id = wandb.sweep(
+    sweep=sweep_config, project="lightgbm-sweep", entity="boostcamp6-recsys6"
+)
 
 # 시드 고정
 set_seeds()
 
 
-X = pd.read_csv('/data/ephemeral/home/level2-dkt-recsys-06/data/FE_v8.csv')
-test =  pd.read_csv('/data/ephemeral/home/level2-dkt-recsys-06/data/FE_v8_test.csv')
+X = pd.read_csv("/data/ephemeral/level2-dkt-recsys-06/data/FE_v9.csv")
 X = X.sort_values(by=["userID", "Timestamp", "assessmentItemID"]).reset_index(drop=True)
-test = test.sort_values(by=["userID", "Timestamp", "assessmentItemID"]).reset_index(drop=True)
 
-test = test[test["answerCode"] == -1]
-X = X[X['answerCode']!=-1]
+test = X[X["answerCode"] == -1]
+X = X[X["answerCode"] != -1]
 
-Feature = ['Itemseq', 'SolvingTime', 'CumulativeTime', 'UserAvgSolvingTime',
-       'Difference_SolvingTime_UserAvgSolvingTime', 'CumulativeItemCount',
-       'Item_last7days', 'Item_last30days', 'CumulativeUserItemAcc',
-       'PastItemCount', 'UserItemElapsed', 'ItemAcc',
-       'AverageItemSolvingTime_Correct', 'AverageItemSolvingTime_Incorrect',
-       'AverageItemSolvingTime', 'Difference_SolvingTime_AvgItemSolvingTime',
-       'UserTagAvgSolvingTime', 'TagAcc', 'CumulativeUserTagAverageAcc',
-       'CumulativeUserTagExponentialAverage', 'UserTagCount', 'UserTagElapsed',
-       'PastTagSolvingTime', 
-       'TestAcc'
+Feature = [
+    "Itemseq",
+    "SolvingTime",
+    "CumulativeTime",
+    "UserAvgSolvingTime",
+    "RelativeUserAvgSolvingTime",
+    "CumulativeItemCount",
+    "Item_last7days",
+    "Item_last30days",
+    "CumulativeUserItemAcc",
+    "PastItemCount",
+    "UserItemElapsed",
+    "UserRecentItemSolvingTime",
+    "ItemAcc",
+    "AverageItemSolvingTime_Correct",
+    "AverageItemSolvingTime_Incorrect",
+    "AverageItemSolvingTime",
+    "RelativeItemSolvingTime",
+    "SolvingTimeClosenessDegree",
+    "UserTagAvgSolvingTime",
+    "TagAcc",
+    "CumulativeUserTagAverageAcc",
+    "CumulativeUserTagExponentialAverage",
+    "UserTagCount",
+    "UserTagElapsed",
+    "TestAcc",
 ]
 
-Categorical_Feature = ['userID', 'assessmentItemID', 'testId', 'KnowledgeTag', 
-       'Month','DayOfWeek', 'TimeOfDay', 'WeekOfYear',
-       'UserRecentTagAnswer', 'PreviousItemAnswer',
-       'categorize_solvingTime', 'categorize_ItemAcc',
-       'categorize_TagAcc', 'categorize_TestAcc',
-       'categorize_CumulativeUserItemAcc',
-       # 'categorize_CumulativeUserTagAverageAcc',
-       # 'categorize_CumulativeUserTagExponentialAverage'
+Categorical_Feature = [
+    "userID",
+    "assessmentItemID",
+    "testId",
+    "KnowledgeTag",
+    "Month",
+    "DayOfWeek",
+    "TimeOfDay",
+    "WeekOfYear",
+    "UserRecentTagAnswer",
+    "UserRecentItemAnswer",
+    "categorize_solvingTime",
+    "categorize_ItemAcc",
+    "categorize_TagAcc",
+    "categorize_TestAcc",
+    "categorize_CumulativeUserItemAcc",
+    "categorize_CumulativeUserTagAverageAcc",
+    "categorize_CumulativeUserTagExponentialAverage",
+    "CategorizedDegree",
 ]
 Feature = Feature + Categorical_Feature
 
 # as category: integer여도 범주형으로 취급 가능
 for feature in Categorical_Feature:
-       test[feature] = test[feature].astype('category')
-       X[feature] = X[feature].astype('category')
+    test[feature] = test[feature].astype("category")
+    X[feature] = X[feature].astype("category")
 
 feat = X.columns.tolist()
 
@@ -178,41 +216,42 @@ exclude_columns = [
     "Timestamp",
     "answerCode",
     "DayOfWeek",
-    'WeekOfYear',
-    'UserAvgSolvingTime',
-    'PastItemCount',
+    "WeekOfYear",
+    "UserAvgSolvingTime",
+    "PastItemCount",
     "user_tag_total_answer",
     "categorize_CumulativeUserTagExponentialAverage",
-    'categorize_CumulativeUserTagAverageAnswerRate',
+    "categorize_CumulativeUserTagAverageAnswerRate",
     "categorize_TestAnswerRate",
-    "categorize_TagAnswerRate"
+    "categorize_TagAnswerRate",
+    "CategorizedDegree"
 ]
 
 filtered_feat = [column for column in feat if column not in exclude_columns]
 
 
-
 def train():
-    
     auc = 0
     acc = 0
     test_preds = np.zeros(len(test))
+
+    wandb.init(
+        project=f"lightgbm-sweep", config=sweep_config, entity="boostcamp6-recsys6"
+    )
+    wandb.config.update({"metric": ["auc"]}, allow_val_change=True)
+
     
-    wandb.init(project=f"lightgbm-sweep", config=sweep_config, entity='boostcamp6-recsys6')
-    
-    ratio = wandb.config.ratio
-    
-    sampled_indices = X.groupby('userID').sample(frac=ratio).index
+    # sampled_indices = X.groupby("userID")
 
     # userID별 마지막 인덱스 찾기
-    # last_indices = X.groupby("userID").tail(1).index
+    last_indices = X.groupby("userID").tail(1).index
 
     # 학습 데이터셋 생성
-    X_train = X.drop(sampled_indices)
+    X_train = X.drop(last_indices)
     y_train = X_train["answerCode"]
 
     # 검증 데이터셋 생성
-    X_valid = X.loc[sampled_indices]
+    X_valid = X.loc[last_indices]
     y_valid = X_valid["answerCode"]
 
     lgb_train = lgb.Dataset(X_train[filtered_feat], y_train)
@@ -221,7 +260,7 @@ def train():
     # 완드비 실험 이름
     korea = pytz.timezone("Asia/Seoul")
     current_time = datetime.now(korea).strftime("%m-%d %H:%M")
-    wandb.run.name = f"Hyeongjin {current_time}"
+    wandb.run.name = f"wook {current_time}"
     current_params = {
         "objective": "binary",
         "metric": ["auc"],
@@ -241,17 +280,17 @@ def train():
         current_params,
         lgb_train,
         valid_sets=[lgb_train, lgb_valid],
-        num_boost_round=500,
+        num_boost_round=1500,
         callbacks=[
             wandb_callback(log_params=True, define_metric=True),
-            lgb.early_stopping(30),
+            lgb.early_stopping(90),
         ],
         categorical_feature=[
             "userID",
             "assessmentItemID",
             "testId",
             "KnowledgeTag",
-            "Month"
+            "Month",
         ],
     )
     preds = model.predict(X_valid[filtered_feat])
@@ -259,10 +298,10 @@ def train():
     auc = roc_auc_score(y_valid, preds)
     test_preds += model.predict(test[filtered_feat])
     print(f"VALID AUC : {auc} ACC : {acc}\n")
-    wandb.log({"valid_1_auc": auc, "accuracy": acc})
+    wandb.log({"auc": auc, "accuracy": acc})
     wandb.finish()
-    
-    #output파일 생성
+
+    # output파일 생성
     output_dir = "output/"
     write_path = os.path.join(
         output_dir,
@@ -275,12 +314,14 @@ def train():
         w.write("id,prediction\n")
         for id, p in enumerate(test_preds):
             w.write("{},{}\n".format(id, p))
-            
+
     feature_importances = model.feature_importance()
     feature_names = model.feature_name()
-    importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': feature_importances}).sort_values(by='Importance', ascending=False)
+    importance_df = pd.DataFrame(
+        {"Feature": feature_names, "Importance": feature_importances}
+    ).sort_values(by="Importance", ascending=False)
 
     print(importance_df)
 
 
-train()
+wandb.agent(sweep_id, train)
