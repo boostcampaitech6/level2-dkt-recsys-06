@@ -1,1 +1,0 @@
-{"iterations": 1436, "od_wait": 956, "learning_rate": 0.029106359131330698, "min_data_in_leaf": 32, "leaf_estimation_iterations": 4, "l2_leaf_reg": 0.15683852581586644, "border_count": 38, "random_strength": 18, "bagging_temperature": 30.09563908598612, "one_hot_max_size": 181, "depth": 3}

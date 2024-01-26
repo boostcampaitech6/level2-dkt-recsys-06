@@ -1,1 +1,0 @@
-{"training_auc": {"max": 0.8755574965925742}, "_timestamp": 1706153554.552092, "valid_1_auc": {"max": 0.8559521093889967}, "iteration": 198, "_runtime": 94.66597700119019, "_step": 198, "_wandb": {"runtime": 188}}

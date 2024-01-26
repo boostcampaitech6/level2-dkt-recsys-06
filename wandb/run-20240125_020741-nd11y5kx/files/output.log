@@ -1,9 +1,0 @@
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'num_leaves' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'learning_rate' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'max_depth' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'min_data_in_leaf' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'feature_fraction' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'bagging_fraction' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'bagging_freq' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'lambda_l1' was locked by 'sweep' (ignored update).
-[34m[1mwandb[39m[22m: [33mWARNING[39m Config item 'lambda_l2' was locked by 'sweep' (ignored update).
