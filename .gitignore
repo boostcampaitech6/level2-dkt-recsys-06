@@ -18,6 +18,5 @@ code/**/run.log
 
 *.pt
 
-*.npy
 
 *.parquet

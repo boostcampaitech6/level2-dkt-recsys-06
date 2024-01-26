@@ -23,10 +23,15 @@ current_time = datetime.now(korea).strftime("%m-%d %H:%M")
 
 def main(args: argparse.Namespace):
     wandb.login()
+<<<<<<< HEAD
     wandb.init(
         project="level2-lightgcn", config=vars(args), entity="boostcamp6-recsys6"
     )
     wandb.run.name = "Wonhee Lee " + current_time
+=======
+    wandb.init(project="level2-lightgcn", config=vars(args), entity="boostcamp6-recsys6")
+    wandb.run.name = "Yechan Kim " + current_time
+>>>>>>> yechan
     wandb.run.save()
     set_seeds(args.seed)
 
